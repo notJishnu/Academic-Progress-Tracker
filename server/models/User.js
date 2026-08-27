@@ -1,43 +1,42 @@
-// models/User.js
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, minlength: 6 }, // bcrypt-hashed
-  currentStreak: { type: Number, default: 0 },
-  longestStreak: { type: Number, default: 0 },
-  lastStreakDate: { type: Date }, // last day the 5hr threshold was met
-}, { timestamps: true });
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
-// models/Section.js
-const sectionSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  name: { type: String, required: true, trim: true },
-  color: { type: String, default: "#3b82f6" },
-}, { timestamps: true });
 
-// models/Goal.js
-const goalSchema = new mongoose.Schema({
-  section: { type: mongoose.Schema.Types.ObjectId, ref: "Section", required: true },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  title: { type: String, required: true },
-  plannedMinutes: { type: Number, required: true, min: 5 },
-  completed: { type: Boolean, default: false },
-  completedAt: { type: Date },
-}, { timestamps: true });
 
-// models/DailyLog.js — one doc per user per day
-const dailyLogSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  date: { type: String, required: true }, // "YYYY-MM-DD" — simple + queryable
-  minutes: [
-    {
-      goal: { type: mongoose.Schema.Types.ObjectId, ref: "Goal" },
-      section: { type: mongoose.Schema.Types.ObjectId, ref: "Section" },
-      minutes: { type: Number, required: true },
-    }
-  ],
-}, { timestamps: true });
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: [true, "Name is required"], trim: true },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: 6,
+      select: false, // never returned in queries by default
+    },
+    currentStreak: { type: Number, default: 0 },
+ longestStreak: { type: Number, default: 0 },
+    lastStreakDate: { type: Date },
+  },
+  { timestamps: true }
+);
 
-dailyLogSchema.index({ user: 1, date: 1 }, { unique: true });
+// Hash password before save
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
 
-// Virtual: totalMinutes = sum of minutes array
+// Instance method to compare passwords
+userSchema.methods.matchPassword = function (entered) {
+  return bcrypt.compare(entered, this.password);
+};
+
+export default mongoose.model("User", userSchema);
