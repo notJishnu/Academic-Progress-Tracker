@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-
-
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: [true, "Name is required"], trim: true },
@@ -17,24 +15,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: 6,
-      select: false, // never returned in queries by default
+      select: false,
     },
     currentStreak: { type: Number, default: 0 },
- longestStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
     lastStreakDate: { type: Date },
   },
   { timestamps: true }
 );
 
-// Hash password before save
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
-// Instance method to compare passwords
 userSchema.methods.matchPassword = function (entered) {
   return bcrypt.compare(entered, this.password);
 };

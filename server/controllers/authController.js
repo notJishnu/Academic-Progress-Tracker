@@ -1,13 +1,11 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// Helper: sign token
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "30d",
   });
 
-// Helper: send consistent response shape
 const sendAuthResponse = (user, statusCode, res) => {
   res.status(statusCode).json({
     _id: user._id,
@@ -21,7 +19,7 @@ const sendAuthResponse = (user, statusCode, res) => {
 
 // @desc  Register user
 // @route POST /api/auth/register
-export const register = async (req, res, next) => {
+export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -40,13 +38,14 @@ export const register = async (req, res, next) => {
     const user = await User.create({ name, email, password });
     sendAuthResponse(user, 201, res);
   } catch (error) {
+    console.error("REGISTER ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
 // @desc  Login user
 // @route POST /api/auth/login
-export const login = async (req, res, next) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -54,7 +53,6 @@ export const login = async (req, res, next) => {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
-    // password is select:false → must explicitly request it
     const user = await User.findOne({ email }).select("+password");
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });
@@ -62,12 +60,13 @@ export const login = async (req, res, next) => {
 
     sendAuthResponse(user, 200, res);
   } catch (error) {
+    console.error("LOGIN ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
 // @desc  Get current user
-// @route GET /api/auth/me (protected)
+// @route GET /api/auth/me
 export const getMe = async (req, res) => {
   res.status(200).json(req.user);
 };
