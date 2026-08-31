@@ -36,7 +36,7 @@ export default function Login() {
         <input
           type="email" required placeholder="Email"
           className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          value={form}
+          value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
         <input

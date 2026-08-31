@@ -1,5 +1,6 @@
 import Section from "../models/Section.js";
 import Goal from "../models/Goal.js";
+import User from "../models/User.js";
 
 // ---------- SECTIONS ----------
 
@@ -75,18 +76,53 @@ export const createGoal = async (req, res) => {
 };
 
 // PATCH /api/goals/:id/toggle
+// @desc  Toggle goal complete + update study streak
+// @route PATCH /api/tracker/goals/:id/toggle
 export const toggleGoal = async (req, res) => {
-    try {
-        const goal = await Goal.findOne({ _id: req.params.id, user: req.user._id });
-        if (!goal) return res.status(404).json({ message: "Goal not found" });
-        goal.completed = !goal.completed;
-        goal.completedAt = goal.completed ? new Date() : null;
-        await goal.save();
-        res.status(200).json(goal);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+  try {
+    const goal = await Goal.findOne({ _id: req.params.id, user: req.user._id });
+    if (!goal) return res.status(404).json({ message: "Goal not found" });
+
+    goal.completed = !goal.completed;
+    goal.completedAt = goal.completed ? new Date() : null;
+    await goal.save();
+
+    // --- Streak logic (only when completing, not un-completing) ---
+    if (goal.completed) {
+      const user = await User.findById(req.user._id);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const last = user.lastStreakDate ? new Date(user.lastStreakDate) : null;
+      if (last) last.setHours(0, 0, 0, 0);
+
+      if (!last || last < yesterday) {
+        // Missed a day (or first ever) → reset to 1
+        user.currentStreak = 1;
+      } else if (last.getTime() === yesterday.getTime()) {
+        // Consecutive day → increment
+        user.currentStreak += 1;
+      }
+      // else: already counted today → no change
+
+      if (last === null || last.getTime() !== today.getTime()) {
+        user.lastStreakDate = today;
+      }
+
+      user.longestStreak = Math.max(user.longestStreak, user.currentStreak);
+      await user.save();
     }
+
+    res.json(goal);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
+
 
 // DELETE /api/goals/:id
 export const deleteGoal = async (req, res) => {
