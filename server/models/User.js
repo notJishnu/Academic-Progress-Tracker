@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: [true, "Name is required"], trim: true },
@@ -20,6 +21,8 @@ const userSchema = new mongoose.Schema(
     currentStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
     lastStreakDate: { type: Date },
+    completedDates: [String],   // e.g. ["2024-06-01", "2024-06-02"] — local date strings
+
   },
   { timestamps: true }
 );

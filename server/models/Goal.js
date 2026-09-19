@@ -12,4 +12,19 @@ const goalSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+
+const toDayStr = (d) => new Date(d).toISOString().slice(0, 10);
+
+function isYesterday(dateStr) {
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  return toDayStr(y) === dateStr;
+}
+
+const isToday = (dateStr) => toDayStr(new Date()) === dateStr;
+
+module.exports = { toDayStr, isYesterday, isToday };
+
+
 export default mongoose.model("Goal", goalSchema);

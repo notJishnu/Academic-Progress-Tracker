@@ -17,6 +17,14 @@ const sendAuthResponse = (user, statusCode, res) => {
   });
 };
 
+const todayStr = `now.getFullYear()−{now.getFullYear()}-now.getFullYear()−{String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+if (!user.completedDates.includes(todayStr)) {
+  user.completedDates.push(todayStr);
+  // keep it bounded
+  if (user.completedDates.length > 400) user.completedDates = user.completedDates.slice(-400);
+}
+
+
 // @desc  Register user
 // @route POST /api/auth/register
 export const register = async (req, res) => {

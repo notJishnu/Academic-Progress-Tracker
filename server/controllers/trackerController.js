@@ -2,6 +2,14 @@ import Section from "../models/Section.js";
 import Goal from "../models/Goal.js";
 import User from "../models/User.js";
 
+const toDayStr = (d) => new Date(d).toISOString().slice(0, 10);
+const isYesterday = (dateStr) => {
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  return toDayStr(y) === dateStr;
+};
+
+
 // ---------- SECTIONS ----------
 
 // GET /api/sections
