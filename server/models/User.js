@@ -22,7 +22,24 @@ const userSchema = new mongoose.Schema(
     longestStreak: { type: Number, default: 0 },
     lastStreakDate: { type: Date },
     completedDates: [String],   // e.g. ["2024-06-01", "2024-06-02"] — local date strings
-
+    totalStudyMinutes: { type: Number, default: 0 },
+    completedGoalsCount: { type: Number, default: 0 },
+    badges: [
+      {
+        id: { type: String, required: true },
+        name: { type: String, required: true },
+        description: { type: String },
+        icon: { type: String },
+        tier: { type: String },
+        unlockedAt: { type: Date, default: Date.now },
+      },
+    ],
+    dailyLogs: [
+      {
+        date: { type: String, required: true },
+        minutes: { type: Number, default: 0 },
+      },
+    ],
   },
   { timestamps: true }
 );
