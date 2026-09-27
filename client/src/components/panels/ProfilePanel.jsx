@@ -1,23 +1,8 @@
 import { useAuth } from "../../context/AuthContext";
 
-const AVATAR_GRADIENTS = [
-  "from-indigo-500 to-violet-600",
-  "from-emerald-500 to-teal-600",
-  "from-orange-500 to-red-500",
-  "from-pink-500 to-rose-600",
-  "from-blue-500 to-cyan-600",
-];
-
-function getGradient(name = "") {
-  const code = name.charCodeAt(0) || 0;
-  return AVATAR_GRADIENTS[code % AVATAR_GRADIENTS.length];
-}
-
 export default function ProfilePanel({ badges = [], dailySummary = null }) {
   const { user } = useAuth();
-
   const initial = user?.name?.charAt(0).toUpperCase() || "?";
-  const gradient = getGradient(user?.name);
 
   const totalHours = Math.floor((user?.totalStudyMinutes || 0) / 60);
   const totalMins = (user?.totalStudyMinutes || 0) % 60;
@@ -52,23 +37,21 @@ export default function ProfilePanel({ badges = [], dailySummary = null }) {
   ];
 
   return (
-    <div className="p-6 max-w-lg mx-auto space-y-8">
+    <div className="p-6 max-w-2xl mx-auto space-y-8">
       {/* Avatar + name */}
       <div className="flex flex-col items-center gap-4 pt-4">
-        <div
-          className={`w-24 h-24 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-4xl font-black shadow-lg`}
-        >
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#2E6F40] to-[#68BA7F] flex items-center justify-center text-[#CFFFDC] text-4xl font-black shadow-md border-4 border-white">
           {initial}
         </div>
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="text-2xl font-black text-[#253D2C]">
             {user?.name}
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-sm font-medium text-[#477e57] mt-0.5">
             {user?.email}
           </p>
           {joined && (
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+            <p className="text-xs text-[#68BA7F] mt-1 font-medium">
               Member since {joined}
             </p>
           )}
@@ -77,20 +60,20 @@ export default function ProfilePanel({ badges = [], dailySummary = null }) {
 
       {/* Stats grid */}
       <div>
-        <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
-          Your Stats
+        <h3 className="text-xs font-bold text-[#477e57] uppercase tracking-widest mb-3">
+          Academic Progress Metrics
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {stats.map((s) => (
             <div
               key={s.label}
-              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4"
+              className="bg-white border border-[#c9ebd6] rounded-xl p-4 shadow-xs"
             >
               <span className="text-2xl">{s.icon}</span>
-              <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-1">
+              <p className="text-xl font-black text-[#253D2C] mt-1.5">
                 {s.value}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
+              <p className="text-xs text-[#477e57] mt-0.5 font-medium">{s.label}</p>
             </div>
           ))}
         </div>
@@ -98,18 +81,18 @@ export default function ProfilePanel({ badges = [], dailySummary = null }) {
 
       {/* Unlocked badges preview */}
       {unlockedCount > 0 && (
-        <div>
-          <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
-            Badges Earned
+        <div className="bg-white border border-[#c9ebd6] rounded-2xl p-5 shadow-xs">
+          <h3 className="text-xs font-bold text-[#477e57] uppercase tracking-widest mb-3">
+            Unlocked Milestone Badges ({unlockedCount})
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {badges
               .filter((b) => b.unlocked)
               .map((b) => (
                 <div
                   key={b.id}
-                  title={b.name}
-                  className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 flex items-center justify-center text-2xl shadow-sm"
+                  title={`${b.name} - ${b.description}`}
+                  className="w-13 h-13 rounded-xl bg-[#CFFFDC] border border-[#68BA7F] flex items-center justify-center text-2xl shadow-xs cursor-pointer hover:scale-105 transition"
                 >
                   {b.icon}
                 </div>

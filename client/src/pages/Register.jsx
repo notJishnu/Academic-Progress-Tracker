@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage } from "../lib/api";
+import EduvaLogo from "../components/EduvaLogo";
 
 export default function Register() {
   const { register } = useAuth();
@@ -28,42 +29,57 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-8 rounded-2xl shadow-md space-y-4">
-        <h1 className="text-2xl font-bold text-slate-800">Create your account 🚀</h1>
+    <div className="min-h-screen flex items-center justify-center bg-[#f3fbf6] px-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-[#c9ebd6] space-y-4">
+        <div className="text-center pb-2 flex flex-col items-center">
+          <EduvaLogo className="w-12 h-12 mb-2 shadow-xs" />
+          <h1 className="text-2xl font-black text-[#253D2C]">Join Eduva 🚀</h1>
+          <p className="text-xs text-[#477e57] mt-0.5">Build daily study discipline and earn milestone badges</p>
+        </div>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>
+          <p className="text-sm text-red-700 bg-red-50 p-3 rounded-xl border border-red-200">{error}</p>
         )}
 
-        <input
-          type="text" required placeholder="Full name"
-          className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
-        <input
-          type="email" required placeholder="Email"
-          className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
-        <input
-          type="password" required placeholder="Password (min 6 chars)"
-          className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-        />
+        <div>
+          <label className="text-xs font-bold text-[#477e57] block mb-1">Full Name</label>
+          <input
+            type="text" required placeholder="Alex Johnson"
+            className="w-full border border-[#c9ebd6] rounded-xl p-3 focus:ring-2 focus:ring-[#68BA7F] focus:border-[#2E6F40] outline-none text-[#253D2C]"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-bold text-[#477e57] block mb-1">Email</label>
+          <input
+            type="email" required placeholder="alex@university.edu"
+            className="w-full border border-[#c9ebd6] rounded-xl p-3 focus:ring-2 focus:ring-[#68BA7F] focus:border-[#2E6F40] outline-none text-[#253D2C]"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-bold text-[#477e57] block mb-1">Password</label>
+          <input
+            type="password" required placeholder="At least 6 characters"
+            className="w-full border border-[#c9ebd6] rounded-xl p-3 focus:ring-2 focus:ring-[#68BA7F] focus:border-[#2E6F40] outline-none text-[#253D2C]"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+          />
+        </div>
 
         <button
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+          className="w-full bg-[#2E6F40] hover:bg-[#253D2C] text-white py-3 rounded-xl font-bold transition shadow-xs disabled:opacity-50"
         >
-          {loading ? "Creating account..." : "Sign up"}
+          {loading ? "Creating Account..." : "Join Eduva"}
         </button>
 
-        <p className="text-sm text-slate-600 text-center">
-          Already have an account? <Link to="/login" className="text-blue-600 font-medium">Login</Link>
+        <p className="text-sm text-[#477e57] text-center pt-2">
+          Already have an account? <Link to="/login" className="text-[#2E6F40] font-bold hover:underline">Log in</Link>
         </p>
       </form>
     </div>

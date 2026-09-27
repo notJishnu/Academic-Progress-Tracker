@@ -1,11 +1,10 @@
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
+import EduvaLogo from "./EduvaLogo";
 
 const NAV_ITEMS = [
   { key: "dashboard", icon: "📊", label: "Dashboard" },
   { key: "profile",   icon: "👤", label: "Profile" },
   { key: "badges",    icon: "🏆", label: "Badges" },
-  { key: "appearance",icon: "🎨", label: "Appearance" },
   { key: "settings",  icon: "⚙️", label: "Settings" },
 ];
 
@@ -18,54 +17,78 @@ export default function Sidebar({
   timerGoalTitle = "",
 }) {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-
   const initial = user?.name?.charAt(0).toUpperCase() || "?";
 
   return (
     <>
       {/* ── Desktop sidebar ─────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/60 h-screen sticky top-0 transition-all duration-300 z-30 ${
+        className={`hidden md:flex flex-col bg-[#253D2C] text-[#CFFFDC] border-r border-[#2E6F40]/60 h-screen sticky top-0 transition-all duration-300 z-30 ${
           collapsed ? "w-[68px]" : "w-[210px]"
         }`}
       >
         {/* Top: logo + collapse toggle */}
-        <div className="flex items-center justify-between px-3 py-4 border-b border-slate-100 dark:border-slate-800">
-          {!collapsed && (
-            <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate leading-tight">
-              📈 APT
-            </span>
+        <div className="flex items-center justify-between px-3 py-3.5 border-b border-[#2E6F40]/60">
+          {!collapsed ? (
+            <div className="flex items-center gap-2.5 truncate">
+              <EduvaLogo className="w-8 h-8" />
+              <div className="truncate">
+                <span className="text-base font-black tracking-wide text-[#CFFFDC] block leading-tight">
+                  Eduva
+                </span>
+                <span className="text-[10px] text-[#68BA7F] font-semibold block leading-none">
+                  Progress Tracker
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto" title="Eduva">
+              <EduvaLogo className="w-7 h-7" />
+            </div>
           )}
           <button
             onClick={onToggleCollapse}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition ml-auto"
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`p-1.5 rounded-lg text-[#68BA7F] hover:text-white hover:bg-[#2E6F40]/60 transition ${
+              collapsed ? "hidden" : "ml-auto"
+            }`}
+            title="Collapse sidebar"
           >
-            {collapsed ? "▶" : "◀"}
+            ◀
           </button>
         </div>
 
+        {collapsed && (
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={onToggleCollapse}
+              className="p-1 rounded-md text-[#68BA7F] hover:text-white hover:bg-[#2E6F40]/60 transition text-xs"
+              title="Expand sidebar"
+            >
+              ▶
+            </button>
+          </div>
+        )}
+
         {/* Active timer indicator */}
         {timerRunning && !collapsed && (
-          <div className="mx-3 mt-3 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-xl">
-            <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse inline-block" />
+          <div className="mx-3 mt-3 px-3 py-2 bg-[#2E6F40]/60 border border-[#68BA7F]/40 rounded-xl">
+            <p className="text-[11px] font-bold text-[#CFFFDC] flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-[#68BA7F] rounded-full animate-pulse inline-block" />
               Timer Active
             </p>
-            <p className="text-[10px] text-indigo-500 dark:text-indigo-400/80 truncate mt-0.5">
+            <p className="text-[10px] text-[#CFFFDC]/80 truncate mt-0.5">
               {timerGoalTitle}
             </p>
           </div>
         )}
         {timerRunning && collapsed && (
           <div className="mx-2 mt-3 flex justify-center">
-            <span className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse" />
+            <span className="w-3 h-3 bg-[#68BA7F] rounded-full animate-pulse" />
           </div>
         )}
 
         {/* Nav items */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-2 py-4 space-y-1.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const active = activePage === item.key;
             return (
@@ -73,10 +96,10 @@ export default function Sidebar({
                 key={item.key}
                 onClick={() => onNavigate(item.key)}
                 title={collapsed ? item.label : ""}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition group ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
                   active
-                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
+                    ? "bg-[#2E6F40] text-white shadow-sm font-semibold border border-[#68BA7F]/40"
+                    : "text-[#CFFFDC]/85 hover:bg-[#2E6F40]/40 hover:text-white"
                 }`}
               >
                 <span className="text-base flex-shrink-0">{item.icon}</span>
@@ -88,64 +111,62 @@ export default function Sidebar({
           })}
         </nav>
 
-        {/* Bottom: theme toggle + streak + logout */}
-        <div className="px-2 py-3 border-t border-slate-100 dark:border-slate-800 space-y-1">
-          {/* Dark / light toggle */}
-          <button
-            onClick={toggleTheme}
-            title="Toggle dark mode"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 transition"
-          >
-            <span className="text-base flex-shrink-0">
-              {theme === "dark" ? "☀️" : "🌙"}
-            </span>
-            {!collapsed && (
-              <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-            )}
-          </button>
-
+        {/* Bottom: streak + user avatar + logout */}
+        <div className="px-2 py-3 border-t border-[#2E6F40]/60 space-y-2">
           {/* Streak chip */}
           {!collapsed && (
-            <div className="flex items-center gap-2 px-3 py-2">
-              <span className="text-orange-500 text-sm">🔥</span>
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#2E6F40]/40 rounded-xl border border-[#68BA7F]/30">
+              <span className="text-orange-400 text-sm">🔥</span>
+              <span className="text-xs font-semibold text-[#CFFFDC]">
                 {user?.currentStreak ?? 0} day streak
               </span>
             </div>
           )}
 
-          {/* User avatar + logout */}
-          <button
-            onClick={logout}
-            title="Logout"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition"
-          >
-            <span className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
-              {initial}
-            </span>
-            {!collapsed && (
-              <span className="truncate text-xs">Logout</span>
-            )}
-          </button>
+          {/* User info & logout */}
+          <div className="flex items-center justify-between gap-2 px-2 py-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-7 h-7 rounded-full bg-[#68BA7F] text-[#253D2C] flex items-center justify-center text-xs font-black flex-shrink-0">
+                {initial}
+              </span>
+              {!collapsed && (
+                <div className="truncate">
+                  <p className="text-xs font-bold text-[#CFFFDC] truncate leading-tight">
+                    {user?.name}
+                  </p>
+                  <p className="text-[10px] text-[#68BA7F] truncate">
+                    {user?.email}
+                  </p>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={logout}
+              title="Logout"
+              className="p-1.5 rounded-lg text-[#CFFFDC]/70 hover:text-red-300 hover:bg-red-900/30 transition text-xs font-semibold"
+            >
+              🚪
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* ── Mobile bottom tab bar ────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 z-40 flex items-center justify-around px-2 py-1.5 safe-area-inset-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#253D2C] border-t border-[#2E6F40] z-40 flex items-center justify-around px-2 py-2 safe-area-inset-bottom">
         {NAV_ITEMS.map((item) => {
           const active = activePage === item.key;
           return (
             <button
               key={item.key}
               onClick={() => onNavigate(item.key)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition ${
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition ${
                 active
-                  ? "text-indigo-600 dark:text-indigo-400"
-                  : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                  ? "text-[#CFFFDC] font-bold bg-[#2E6F40]/60"
+                  : "text-[#68BA7F] hover:text-[#CFFFDC]"
               }`}
             >
               <span className="text-lg">{item.icon}</span>
-              <span className={`text-[10px] font-medium ${active ? "font-bold" : ""}`}>
+              <span className="text-[10px]">
                 {item.label}
               </span>
             </button>
@@ -153,10 +174,10 @@ export default function Sidebar({
         })}
         <button
           onClick={logout}
-          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-slate-400 dark:text-slate-500 hover:text-red-500 transition"
+          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[#68BA7F] hover:text-red-300 transition"
         >
           <span className="text-lg">🚪</span>
-          <span className="text-[10px] font-medium">Logout</span>
+          <span className="text-[10px]">Logout</span>
         </button>
       </nav>
     </>

@@ -10,8 +10,9 @@ import BadgeShelf from "../components/BadgeShelf";
 import TodayStudyBreakdown from "../components/TodayStudyBreakdown";
 import FocusTimerModal from "../components/FocusTimerModal";
 import AppLayout from "../components/AppLayout";
+import EduvaLogo from "../components/EduvaLogo";
 
-const COLORS = ["#6366f1", "#ef4444", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4"];
+const COLORS = ["#2E6F40", "#68BA7F", "#1e40af", "#d97706", "#dc2626", "#7c3aed"];
 
 export default function Dashboard() {
   const { user, refreshUser } = useAuth();
@@ -159,7 +160,7 @@ export default function Dashboard() {
 
   // ── Render ───────────────────────────────────────────────────────
   const dashboardContent = (
-    <div className="min-h-full pb-20 md:pb-6">
+    <div className="min-h-full pb-16">
 
       {/* Focus Timer Modal */}
       {activeTimerGoal && (
@@ -172,22 +173,22 @@ export default function Dashboard() {
 
       {/* Badge Unlock Celebration */}
       {newBadgeAlert && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 dark:border-slate-700">
-            <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">🎉</div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Milestone Unlocked!</h3>
+        <div className="fixed inset-0 bg-[#253D2C]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-[#c9ebd6]">
+            <div className="w-14 h-14 bg-[#CFFFDC] rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">🎉</div>
+            <h3 className="text-lg font-bold text-[#253D2C]">Milestone Unlocked!</h3>
             <div className="my-4 space-y-3">
               {newBadgeAlert.map((b) => (
-                <div key={b.id} className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
+                <div key={b.id} className="p-3 bg-[#e3f5eb] border border-[#68BA7F]/40 rounded-xl">
                   <span className="text-3xl block mb-1">{b.icon}</span>
-                  <h4 className="font-bold text-sm text-amber-900 dark:text-amber-300">{b.name}</h4>
-                  <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5">{b.description}</p>
+                  <h4 className="font-bold text-sm text-[#253D2C]">{b.name}</h4>
+                  <p className="text-xs text-[#376344] mt-0.5">{b.description}</p>
                 </div>
               ))}
             </div>
             <button
               onClick={() => setNewBadgeAlert(null)}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl text-sm transition"
+              className="w-full bg-[#2E6F40] hover:bg-[#253D2C] text-white font-semibold py-2.5 rounded-xl text-sm transition"
             >
               Keep Going! 🚀
             </button>
@@ -197,9 +198,29 @@ export default function Dashboard() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6 pt-6">
 
+        {/* Top Header with Eduva Logo */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#c9ebd6]">
+          <div className="flex items-center gap-3">
+            <EduvaLogo className="w-10 h-10 shadow-xs" />
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-[#253D2C] leading-tight">
+                Eduva Dashboard
+              </h1>
+              <p className="text-xs text-[#477e57] font-medium">
+                Welcome back, <b className="text-[#253D2C]">{user?.name}</b> · Stay consistent with your daily study goals!
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="bg-[#CFFFDC] text-[#2E6F40] border border-[#68BA7F]/40 px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+              🔥 {user?.currentStreak ?? 0} Day Streak
+            </span>
+          </div>
+        </div>
+
         {/* Error banner */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 px-4 py-3 rounded-xl text-sm flex justify-between items-center">
+          <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl text-sm flex justify-between items-center">
             <span>{error}</span>
             <button onClick={() => setError("")} className="font-bold ml-4">✕</button>
           </div>
@@ -208,15 +229,15 @@ export default function Dashboard() {
         {/* 4 Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Studied Today", value: formattedTodayTime || "0m", sub: `${dailySummary?.completedTodayCount || 0} tasks done`, color: "text-indigo-600 dark:text-indigo-400" },
-            { label: "Current Streak", value: `🔥 ${user?.currentStreak ?? 0}`, sub: "Daily consistency", color: "text-orange-500" },
-            { label: "Longest Streak", value: `🏆 ${user?.longestStreak ?? 0}`, sub: "Personal record", color: "text-amber-500" },
-            { label: "Badges Earned", value: unlockedBadgesCount, sub: `out of ${badges.length}`, color: "text-emerald-600 dark:text-emerald-400" },
+            { label: "Studied Today", value: formattedTodayTime || "0m", sub: `${dailySummary?.completedTodayCount || 0} tasks done`, color: "text-[#2E6F40]" },
+            { label: "Current Streak", value: `🔥 ${user?.currentStreak ?? 0}`, sub: "Daily consistency", color: "text-orange-600" },
+            { label: "Longest Streak", value: `🏆 ${user?.longestStreak ?? 0}`, sub: "Personal record", color: "text-amber-600" },
+            { label: "Badges Earned", value: `${unlockedBadgesCount} / ${badges.length}`, sub: "Milestones unlocked", color: "text-[#2E6F40]" },
           ].map((s) => (
-            <div key={s.label} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-700 p-4">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
+            <div key={s.label} className="bg-white rounded-xl shadow-xs border border-[#c9ebd6] p-4">
+              <p className="text-xs font-medium text-[#477e57]">{s.label}</p>
               <p className={`text-2xl font-black mt-1 ${s.color}`}>{s.value}</p>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{s.sub}</p>
+              <p className="text-[11px] text-[#68BA7F] mt-0.5">{s.sub}</p>
             </div>
           ))}
         </div>
@@ -234,31 +255,31 @@ export default function Dashboard() {
           <div className="space-y-5">
 
             {/* Sections card */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-700 p-5">
-              <h2 className="font-bold text-sm text-slate-900 dark:text-slate-100 mb-3 uppercase tracking-wide">Sections / Subjects</h2>
+            <div className="bg-white rounded-xl shadow-xs border border-[#c9ebd6] p-5">
+              <h2 className="font-bold text-sm text-[#253D2C] mb-3 uppercase tracking-wide">Sections / Subjects</h2>
               <form onSubmit={handleAddSection} className="space-y-2.5 mb-4">
                 <input
                   value={sectionName}
                   onChange={(e) => setSectionName(e.target.value)}
                   placeholder="e.g. Data Structures, Calculus…"
-                  className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-[#c9ebd6] bg-white text-[#253D2C] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#68BA7F] focus:border-[#2E6F40]"
                   required
                 />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Color:</span>
+                  <span className="text-xs text-[#477e57] font-medium">Color:</span>
                   <div className="flex gap-1.5">
                     {COLORS.map((c) => (
                       <button
                         key={c}
                         type="button"
                         onClick={() => setSectionColor(c)}
-                        className={`w-5 h-5 rounded-full transition ${sectionColor === c ? "ring-2 ring-offset-1 ring-slate-800 dark:ring-slate-200 scale-110" : ""}`}
+                        className={`w-5 h-5 rounded-full transition ${sectionColor === c ? "ring-2 ring-offset-1 ring-[#253D2C] scale-110" : ""}`}
                         style={{ backgroundColor: c }}
                       />
                     ))}
                   </div>
                 </div>
-                <button className="w-full bg-indigo-600 text-white text-xs font-semibold py-2 rounded-lg hover:bg-indigo-700 transition">
+                <button className="w-full bg-[#2E6F40] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#253D2C] transition shadow-xs">
                   + Add Section
                 </button>
               </form>
@@ -269,39 +290,39 @@ export default function Dashboard() {
                   const done = sg.filter((g) => g.completed).length;
                   const pct = sg.length ? Math.round((done / sg.length) * 100) : 0;
                   return (
-                    <li key={s._id} className="bg-slate-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 border border-slate-100 dark:border-slate-600">
+                    <li key={s._id} className="bg-[#f3fbf6] rounded-lg px-3 py-2 border border-[#c9ebd6]">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-2 font-medium text-slate-800 dark:text-slate-200">
+                        <span className="flex items-center gap-2 font-medium text-[#253D2C]">
                           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
                           {s.name}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-400">{done}/{sg.length}</span>
-                          <button onClick={() => handleDeleteSection(s._id)} className="text-slate-400 hover:text-red-500 transition">✕</button>
+                          <span className="text-[#477e57] font-mono">{done}/{sg.length}</span>
+                          <button onClick={() => handleDeleteSection(s._id)} className="text-[#68BA7F] hover:text-red-600 transition">✕</button>
                         </div>
                       </div>
-                      <div className="mt-1.5 h-1 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, backgroundColor: s.color }} />
+                      <div className="mt-1.5 h-1.5 bg-[#e3f5eb] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, backgroundColor: s.color || "#2E6F40" }} />
                       </div>
                     </li>
                   );
                 })}
                 {!sections.length && (
-                  <p className="text-slate-400 text-xs text-center py-4 italic">No sections yet — add one above!</p>
+                  <p className="text-[#68BA7F] text-xs text-center py-4 italic">No sections yet — add one above!</p>
                 )}
               </ul>
             </div>
 
             {/* New Goal form */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-700 p-5">
-              <h2 className="font-bold text-sm text-slate-900 dark:text-slate-100 mb-3 uppercase tracking-wide">Add Study Goal</h2>
+            <div className="bg-white rounded-xl shadow-xs border border-[#c9ebd6] p-5">
+              <h2 className="font-bold text-sm text-[#253D2C] mb-3 uppercase tracking-wide">Add Study Goal</h2>
               <form onSubmit={handleAddGoal} className="space-y-3">
                 <div>
-                  <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Section</label>
+                  <label className="text-xs text-[#477e57] font-medium block mb-1">Section</label>
                   <select
                     value={goalSection}
                     onChange={(e) => setGoalSection(e.target.value)}
-                    className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-[#c9ebd6] bg-white text-[#253D2C] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#68BA7F] focus:border-[#2E6F40]"
                     required
                   >
                     <option value="" disabled>Select section</option>
@@ -309,28 +330,28 @@ export default function Dashboard() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Goal / Topic</label>
+                  <label className="text-xs text-[#477e57] font-medium block mb-1">Goal / Topic</label>
                   <input
                     value={goalTitle}
                     onChange={(e) => setGoalTitle(e.target.value)}
                     placeholder="e.g. Read Chapter 4 & solve problems"
-                    className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-[#c9ebd6] bg-white text-[#253D2C] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#68BA7F] focus:border-[#2E6F40]"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 dark:text-slate-400 font-medium block mb-1">Planned Time (mins)</label>
+                  <label className="text-xs text-[#477e57] font-medium block mb-1">Planned Time (mins)</label>
                   <input
                     type="number"
                     min="5"
                     step="5"
                     value={goalMinutes}
                     onChange={(e) => setGoalMinutes(e.target.value)}
-                    className="w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-[#c9ebd6] bg-white text-[#253D2C] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#68BA7F] focus:border-[#2E6F40]"
                     required
                   />
                 </div>
-                <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 rounded-lg transition shadow-sm">
+                <button className="w-full bg-[#2E6F40] hover:bg-[#253D2C] text-white text-xs font-semibold py-2.5 rounded-lg transition shadow-xs">
                   + Add Study Goal
                 </button>
               </form>
@@ -341,7 +362,7 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-3">
 
             {/* Filter bar */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-700 px-4 py-3 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div className="bg-white rounded-xl shadow-xs border border-[#c9ebd6] px-4 py-3 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
               <div className="flex gap-1.5 flex-wrap">
                 {[
                   { key: "all", label: `All (${goals.length})` },
@@ -351,10 +372,10 @@ export default function Dashboard() {
                   <button
                     key={key}
                     onClick={() => setFilterStatus(key)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                       filterStatus === key
-                        ? "bg-indigo-600 text-white shadow-sm"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600"
+                        ? "bg-[#2E6F40] text-white shadow-xs"
+                        : "bg-[#e3f5eb] text-[#253D2C] hover:bg-[#CFFFDC]"
                     }`}
                   >
                     {label}
@@ -364,7 +385,7 @@ export default function Dashboard() {
               <select
                 value={filterSection}
                 onChange={(e) => setFilterSection(e.target.value)}
-                className="text-xs border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="text-xs border border-[#c9ebd6] bg-white text-[#253D2C] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#68BA7F]"
               >
                 <option value="all">All Sections</option>
                 {sections.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
@@ -376,10 +397,10 @@ export default function Dashboard() {
               {filteredGoals.map((g) => (
                 <div
                   key={g._id}
-                  className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border p-4 transition ${
+                  className={`bg-white rounded-xl shadow-xs border transition ${
                     g.completed
-                      ? "border-slate-200 dark:border-slate-700 opacity-75"
-                      : "border-slate-200/90 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-md"
+                      ? "border-[#e3f5eb] bg-[#f8fdfa] opacity-80 p-4"
+                      : "border-[#c9ebd6] hover:border-[#68BA7F] hover:shadow-sm p-4"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -387,18 +408,18 @@ export default function Dashboard() {
                       type="checkbox"
                       checked={g.completed}
                       onChange={() => handleToggle(g._id)}
-                      className="w-5 h-5 accent-indigo-600 rounded cursor-pointer flex-shrink-0"
+                      className="w-5 h-5 accent-[#2E6F40] rounded cursor-pointer flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold truncate ${g.completed ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-800 dark:text-slate-100"}`}>
+                      <p className={`text-sm font-semibold truncate ${g.completed ? "line-through text-[#68BA7F]" : "text-[#253D2C]"}`}>
                         {g.title}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs text-slate-400 dark:text-slate-500">⏱️ {g.plannedMinutes} mins</span>
+                        <span className="text-xs text-[#477e57]">⏱️ {g.plannedMinutes} mins</span>
                         {g.actualMinutes && g.actualMinutes !== g.plannedMinutes && (
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ {g.actualMinutes}m studied</span>
+                          <span className="text-xs text-[#2E6F40] font-semibold">✓ {g.actualMinutes}m studied</span>
                         )}
-                        <span className="text-xs font-medium flex items-center gap-1" style={{ color: g.section?.color }}>
+                        <span className="text-xs font-semibold flex items-center gap-1" style={{ color: g.section?.color || "#2E6F40" }}>
                           ● {g.section?.name}
                         </span>
                       </div>
@@ -409,8 +430,8 @@ export default function Dashboard() {
                         onClick={() => openTimer(g)}
                         className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                           activeTimerGoal?._id === g._id
-                            ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/30"
-                            : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400"
+                            ? "bg-[#2E6F40] text-white shadow-xs"
+                            : "bg-[#e3f5eb] text-[#2E6F40] hover:bg-[#CFFFDC] border border-[#c9ebd6]"
                         }`}
                         title="Start a focus timer for this goal"
                       >
@@ -420,7 +441,7 @@ export default function Dashboard() {
 
                     <button
                       onClick={() => handleDeleteGoal(g._id)}
-                      className="text-slate-300 dark:text-slate-600 hover:text-red-500 p-1 transition flex-shrink-0"
+                      className="text-[#68BA7F] hover:text-red-600 p-1 transition flex-shrink-0"
                       title="Delete goal"
                     >
                       ✕
@@ -430,7 +451,7 @@ export default function Dashboard() {
               ))}
 
               {filteredGoals.length === 0 && (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 p-10 text-center text-slate-400 text-sm">
+                <div className="bg-white rounded-xl border border-dashed border-[#c9ebd6] p-10 text-center text-[#477e57] text-sm">
                   {goals.length === 0
                     ? "🎯 No goals yet — add one using the form on the left!"
                     : "🔍 No goals match the selected filters."}

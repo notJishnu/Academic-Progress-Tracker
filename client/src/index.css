@@ -1,19 +1,63 @@
 @import "tailwindcss";
 
-/* ── Tailwind v4 dark mode: toggle `.dark` on <html> ── */
-@variant dark (&:where(.dark, .dark *));
+/* ════════════════════════════════════════════════════════
+   ACADEMIC PROGRESS TRACKER - COLOR PALETTE
+   Primary:   #2E6F40 (Forest Green)
+   Mint:      #CFFFDC (Soft Mint)
+   Mid Green: #68BA7F (Sage Accent)
+   Dark Deep: #253D2C (Evergreen Dark)
+   ════════════════════════════════════════════════════════ */
 
-/* ── Base styles ── */
+@theme {
+  --color-forest: #2E6F40;
+  --color-mint: #CFFFDC;
+  --color-sage: #68BA7F;
+  --color-evergreen: #253D2C;
+
+  /* ── Indigo mapping -> Forest green scale ── */
+  --color-indigo-50:  #CFFFDC;
+  --color-indigo-100: #bbf7cf;
+  --color-indigo-200: #93e6ad;
+  --color-indigo-300: #68BA7F;
+  --color-indigo-400: #499e63;
+  --color-indigo-500: #35834c;
+  --color-indigo-600: #2E6F40;
+  --color-indigo-700: #255d34;
+  --color-indigo-800: #253D2C;
+  --color-indigo-900: #1b2e21;
+
+  /* ── Emerald mapping -> Forest green scale ── */
+  --color-emerald-50:  #CFFFDC;
+  --color-emerald-100: #bbf7cf;
+  --color-emerald-200: #93e6ad;
+  --color-emerald-300: #68BA7F;
+  --color-emerald-400: #499e63;
+  --color-emerald-500: #35834c;
+  --color-emerald-600: #2E6F40;
+  --color-emerald-700: #255d34;
+  --color-emerald-800: #253D2C;
+  --color-emerald-900: #1b2e21;
+
+  /* ── Neutral Slate mapping -> Green-tinted clean neutrals ── */
+  --color-slate-50:  #f3fbf6;
+  --color-slate-100: #e3f5eb;
+  --color-slate-200: #c9ebd6;
+  --color-slate-300: #a7d9bb;
+  --color-slate-400: #68BA7F;
+  --color-slate-500: #477e57;
+  --color-slate-600: #376344;
+  --color-slate-700: #2E6F40;
+  --color-slate-800: #253D2C;
+  --color-slate-900: #192a1e;
+  --color-slate-950: #101c13;
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: #f9fafb;
-}
-
-.dark body {
-  background-color: #0f172a;
-  color: #f1f5f9;
+  background-color: #f3fbf6;
+  color: #253D2C;
 }
 
 #root {
