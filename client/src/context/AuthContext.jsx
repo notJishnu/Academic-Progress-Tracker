@@ -38,11 +38,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Called with the credential string from Google's OneTap / button
-  const loginWithGoogle = async (credential) => {
-    const { data } = await api.post("/auth/google", { credential });
-    localStorage.setItem("token", data.token);
-    setUser(data);
-  };
+ const loginWithGoogle = async (credential) => {
+  const { data } = await api.post("/api/auth/google", { credential });
+  localStorage.setItem("token", data.token);
+  setUser(data);
+};
 
   const logout = () => {
     localStorage.removeItem("token");
