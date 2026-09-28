@@ -14,3 +14,5 @@ export const deleteGoal = (id) => api.delete(`/tracker/goals/${id}`);
 // ---------- BADGES & SUMMARY ----------
 export const getBadges = () => api.get("/tracker/badges");
 export const getDailySummary = () => api.get("/tracker/summary");
+export const logSession = (data) => api.post("/tracker/session", data);
+export const getLeaderboard = () => api.get("/tracker/leaderboard");

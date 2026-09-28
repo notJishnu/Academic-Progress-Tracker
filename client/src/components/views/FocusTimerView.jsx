@@ -37,6 +37,9 @@ export default function FocusTimerView({
     initialSection?._id || (sections.length > 0 ? sections[0]._id : "")
   );
 
+  const [timerMode, setTimerMode] = useState("countdown"); // "countdown" | "stopwatch"
+  const [stopwatchSeconds, setStopwatchSeconds] = useState(0);
+
   const [presetMinutes, setPresetMinutes] = useState(25);
   const [totalSeconds, setTotalSeconds] = useState(25 * 60);
   const [remainingSeconds, setRemainingSeconds] = useState(25 * 60);
@@ -54,20 +57,30 @@ export default function FocusTimerView({
   useEffect(() => {
     if (isActive) {
       timerRef.current = setInterval(() => {
-        setRemainingSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            handleFinish();
-            return 0;
-          }
-          return prev - 1;
-        });
+        if (timerMode === "countdown") {
+          setRemainingSeconds((prev) => {
+            if (prev <= 1) {
+              clearInterval(timerRef.current);
+              handleFinish();
+              return 0;
+            }
+            return prev - 1;
+          });
+        } else {
+          setStopwatchSeconds((prev) => prev + 1);
+        }
       }, 1000);
     } else {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
-  }, [isActive, handleFinish]);
+  }, [isActive, timerMode, handleFinish]);
+
+  const handleSwitchMode = (mode) => {
+    if (mode === timerMode) return;
+    setIsActive(false);
+    setTimerMode(mode);
+  };
 
   const selectPreset = (mins) => {
     setPresetMinutes(mins);
@@ -86,24 +99,34 @@ export default function FocusTimerView({
 
   const resetTimer = () => {
     setIsActive(false);
-    setRemainingSeconds(totalSeconds);
+    if (timerMode === "countdown") {
+      setRemainingSeconds(totalSeconds);
+    } else {
+      setStopwatchSeconds(0);
+    }
   };
 
-  const hrs = Math.floor(remainingSeconds / 3600);
-  const mins = Math.floor((remainingSeconds % 3600) / 60);
-  const secs = remainingSeconds % 60;
+  const currentDisplaySeconds = timerMode === "countdown" ? remainingSeconds : stopwatchSeconds;
+  const hrs = Math.floor(currentDisplaySeconds / 3600);
+  const mins = Math.floor((currentDisplaySeconds % 3600) / 60);
+  const secs = currentDisplaySeconds % 60;
   const timeFormatted = hrs > 0
     ? `${hrs}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
     : `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 
-  const elapsedSeconds = totalSeconds - remainingSeconds;
+  const elapsedSeconds = timerMode === "countdown" ? totalSeconds - remainingSeconds : stopwatchSeconds;
   const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
 
   const handleSaveSession = () => {
-    // Find matching goal for this section, or trigger complete session
-    const matchingGoal = goals.find((g) => (g.section?._id || g.section) === selectedSectionId && !g.completed) || goals[0];
-    const goalId = matchingGoal?._id;
-    onCompleteSession(goalId, elapsedMinutes);
+    const matchingGoal = goals.find((g) => (g.section?._id || g.section) === selectedSectionId && !g.completed);
+    const selectedSec = sections.find((s) => s._id === selectedSectionId);
+
+    onCompleteSession({
+      sectionId: selectedSectionId,
+      goalId: matchingGoal?._id,
+      minutes: elapsedMinutes,
+      title: matchingGoal?.title || `Focus Session (${selectedSec ? selectedSec.name : "Study"})`
+    });
     resetTimer();
   };
 
@@ -113,7 +136,20 @@ export default function FocusTimerView({
   const todayMins = todayMinutes % 60;
   const formattedTodayTime = todayHours > 0 ? `${todayHours}h ${todayMins}m` : `${todayMins}m`;
 
-  const completedTodayGoals = goals.filter((g) => g.completed);
+  const getDayStr = (d) => {
+    if (!d) return "";
+    const date = new Date(d);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+  const todayKey = getDayStr(new Date());
+  const todayUtc = new Date().toISOString().slice(0, 10);
+
+  const completedTodayGoals = goals.filter((g) => {
+    if (!g.completed) return false;
+    if (!g.completedAt) return true;
+    const day = getDayStr(g.completedAt);
+    return day === todayKey || day === todayUtc;
+  });
 
   return (
     <div className="space-y-6">
@@ -129,6 +165,36 @@ export default function FocusTimerView({
 
       {/* ── Main Timer Card (Screenshot 3) ──────────────────── */}
       <div className="max-w-xl mx-auto bg-white rounded-3xl border border-[#c9ebd6] shadow-sm p-6 sm:p-8 space-y-6 text-center">
+        {/* Timer Mode Toggle (Countdown vs Stopwatch) */}
+        <div className="flex justify-center">
+          <div className="inline-flex p-1 bg-[#f3fbf6] border border-[#c9ebd6] rounded-2xl gap-1">
+            <button
+              type="button"
+              onClick={() => handleSwitchMode("countdown")}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                timerMode === "countdown"
+                  ? "bg-[#2E6F40] text-white shadow-xs"
+                  : "text-[#477e57] hover:text-[#253D2C] hover:bg-[#e3f5eb]"
+              }`}
+            >
+              <span>⏳</span>
+              <span>Countdown Timer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSwitchMode("stopwatch")}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                timerMode === "stopwatch"
+                  ? "bg-[#2E6F40] text-white shadow-xs"
+                  : "text-[#477e57] hover:text-[#253D2C] hover:bg-[#e3f5eb]"
+              }`}
+            >
+              <span>⏱️</span>
+              <span>Stopwatch</span>
+            </button>
+          </div>
+        </div>
+
         {/* Module / Subject Selector */}
         <div className="flex items-center justify-center">
           <div className="relative inline-block w-full max-w-xs">
@@ -149,35 +215,41 @@ export default function FocusTimerView({
           </div>
         </div>
 
-        {/* Preset Duration Chips */}
-        <div className="flex items-center justify-center gap-2 flex-wrap text-xs">
-          {[25, 45, 60].map((m) => (
+        {/* Preset Duration Chips (Only in Countdown mode) */}
+        {timerMode === "countdown" ? (
+          <div className="flex items-center justify-center gap-2 flex-wrap text-xs">
+            {[25, 45, 60].map((m) => (
+              <button
+                key={m}
+                onClick={() => selectPreset(m)}
+                className={`px-4 py-2 rounded-xl font-bold transition ${
+                  presetMinutes === m
+                    ? "bg-[#2E6F40] text-white shadow-xs"
+                    : "bg-[#e3f5eb] text-[#253D2C] hover:bg-[#CFFFDC]"
+                }`}
+              >
+                {m} Min
+              </button>
+            ))}
             <button
-              key={m}
-              onClick={() => selectPreset(m)}
+              onClick={() => setShowCustomModal(true)}
               className={`px-4 py-2 rounded-xl font-bold transition ${
-                presetMinutes === m
+                ![25, 45, 60].includes(presetMinutes)
                   ? "bg-[#2E6F40] text-white shadow-xs"
                   : "bg-[#e3f5eb] text-[#253D2C] hover:bg-[#CFFFDC]"
               }`}
             >
-              {m} Min
+              Custom {![25, 45, 60].includes(presetMinutes) && `(${presetMinutes}m)`}
             </button>
-          ))}
-          <button
-            onClick={() => setShowCustomModal(true)}
-            className={`px-4 py-2 rounded-xl font-bold transition ${
-              ![25, 45, 60].includes(presetMinutes)
-                ? "bg-[#2E6F40] text-white shadow-xs"
-                : "bg-[#e3f5eb] text-[#253D2C] hover:bg-[#CFFFDC]"
-            }`}
-          >
-            Custom {![25, 45, 60].includes(presetMinutes) && `(${presetMinutes}m)`}
-          </button>
-        </div>
+          </div>
+        ) : (
+          <div className="text-xs text-[#477e57] font-medium py-1">
+            <span>⏱️ Open-ended flow mode. Hit play, focus, and log your session when done.</span>
+          </div>
+        )}
 
         {/* Timer Display Readout */}
-        <div className="py-6 flex flex-col items-center">
+        <div className="py-4 flex flex-col items-center">
           <div className="text-6xl sm:text-7xl font-mono font-black tracking-tight text-[#253D2C]">
             {timeFormatted}
           </div>
@@ -188,17 +260,27 @@ export default function FocusTimerView({
                 : "bg-[#e3f5eb] text-[#477e57]"
             }`}
           >
-            {isActive ? "POMODORO ACTIVE" : remainingSeconds === 0 ? "SESSION COMPLETE 🎉" : "READY FOR FLOW"}
+            {timerMode === "countdown"
+              ? isActive
+                ? "COUNTDOWN ACTIVE"
+                : remainingSeconds === 0
+                ? "SESSION COMPLETE 🎉"
+                : "READY FOR FLOW"
+              : isActive
+              ? "STOPWATCH RUNNING"
+              : stopwatchSeconds > 0
+              ? "STOPWATCH PAUSED"
+              : "STOPWATCH READY"}
           </p>
         </div>
 
         {/* Timer Action Controls */}
-        <div className="flex items-center justify-center gap-4 pt-2">
+        <div className="flex items-center justify-center gap-4 pt-1">
           {/* Reset button */}
           <button
             onClick={resetTimer}
             className="w-11 h-11 rounded-2xl bg-[#e3f5eb] hover:bg-[#CFFFDC] text-[#477e57] hover:text-[#253D2C] font-bold text-sm transition flex items-center justify-center shadow-2xs"
-            title="Reset timer"
+            title={timerMode === "countdown" ? "Reset countdown" : "Reset stopwatch"}
           >
             ↺
           </button>
@@ -214,7 +296,7 @@ export default function FocusTimerView({
           {/* Complete & Log Button */}
           <button
             onClick={handleSaveSession}
-            disabled={elapsedSeconds < 30}
+            disabled={elapsedSeconds < 10}
             className="px-4 py-3 rounded-2xl bg-[#CFFFDC] hover:bg-[#68BA7F] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed text-[#2E6F40] font-bold text-xs transition shadow-2xs flex items-center gap-1.5"
             title="Complete & Log Focused Minutes"
           >

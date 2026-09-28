@@ -1,12 +1,25 @@
 import { useAuth } from "../context/AuthContext";
 import EduvaLogo from "./EduvaLogo";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Timer,
+  Award,
+  Trophy,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  LogOut,
+} from "lucide-react";
 
 const NAV_ITEMS = [
-  { key: "dashboard",  icon: "🎛️", label: "Dashboard" },
-  { key: "subjects",   icon: "📖", label: "My Subjects" },
-  { key: "timer",      icon: "⏱️", label: "Focus Timer" },
-  { key: "milestones", icon: "🏆", label: "Milestones" },
-  { key: "settings",   icon: "⚙️", label: "Settings" },
+  { key: "dashboard",   icon: LayoutDashboard, label: "Dashboard" },
+  { key: "subjects",    icon: BookOpen,        label: "My Subjects" },
+  { key: "timer",       icon: Timer,           label: "Focus Timer" },
+  { key: "milestones",  icon: Award,           label: "Milestones" },
+  { key: "leaderboard", icon: Trophy,          label: "Leaderboard" },
+  { key: "settings",    icon: Settings,        label: "Settings" },
 ];
 
 export default function Sidebar({
@@ -54,7 +67,7 @@ export default function Sidebar({
             }`}
             title="Collapse sidebar"
           >
-            ◀
+            <ChevronLeft className="w-4 h-4" strokeWidth={2.2} />
           </button>
         </div>
 
@@ -62,10 +75,10 @@ export default function Sidebar({
           <div className="flex justify-center pt-2">
             <button
               onClick={onToggleCollapse}
-              className="p-1 rounded-md text-[#68BA7F] hover:text-white hover:bg-[#2E6F40]/60 transition text-xs"
+              className="p-1.5 rounded-md text-[#68BA7F] hover:text-white hover:bg-[#2E6F40]/60 transition"
               title="Expand sidebar"
             >
-              ▶
+              <ChevronRight className="w-4 h-4" strokeWidth={2.2} />
             </button>
           </div>
         )}
@@ -92,18 +105,24 @@ export default function Sidebar({
         <nav className="flex-1 px-2 py-4 space-y-1.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const active = activePage === item.key;
+            const Icon = item.icon;
             return (
               <button
                 key={item.key}
                 onClick={() => onNavigate(item.key)}
                 title={collapsed ? item.label : ""}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
+                className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
                   active
                     ? "bg-[#2E6F40] text-white shadow-sm font-semibold border border-[#68BA7F]/40"
                     : "text-[#CFFFDC]/85 hover:bg-[#2E6F40]/40 hover:text-white"
                 }`}
               >
-                <span className="text-base flex-shrink-0">{item.icon}</span>
+                <Icon
+                  className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                    active ? "text-[#CFFFDC]" : "text-[#68BA7F] group-hover:text-[#CFFFDC]"
+                  }`}
+                  strokeWidth={2.2}
+                />
                 {!collapsed && (
                   <span className="truncate">{item.label}</span>
                 )}
@@ -117,7 +136,7 @@ export default function Sidebar({
           {/* Streak chip */}
           {!collapsed && (
             <div className="flex items-center gap-2 px-3 py-2 bg-[#2E6F40]/40 rounded-xl border border-[#68BA7F]/30">
-              <span className="text-orange-400 text-sm">🔥</span>
+              <Flame className="w-3.5 h-3.5 text-[#68BA7F] flex-shrink-0" strokeWidth={2.2} />
               <span className="text-xs font-semibold text-[#CFFFDC]">
                 {user?.currentStreak ?? 0} day streak
               </span>
@@ -146,7 +165,7 @@ export default function Sidebar({
               title="Logout"
               className="p-1.5 rounded-lg text-[#CFFFDC]/70 hover:text-red-300 hover:bg-red-900/30 transition text-xs font-semibold"
             >
-              🚪
+              <LogOut className="w-4 h-4" strokeWidth={2.2} />
             </button>
           </div>
         </div>
@@ -156,17 +175,18 @@ export default function Sidebar({
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#253D2C] border-t border-[#2E6F40] z-40 flex items-center justify-around px-2 py-2 safe-area-inset-bottom">
         {NAV_ITEMS.map((item) => {
           const active = activePage === item.key;
+          const Icon = item.icon;
           return (
             <button
               key={item.key}
               onClick={() => onNavigate(item.key)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition ${
+              className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition ${
                 active
                   ? "text-[#CFFFDC] font-bold bg-[#2E6F40]/60"
                   : "text-[#68BA7F] hover:text-[#CFFFDC]"
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
+              <Icon className="w-5 h-5" strokeWidth={2.2} />
               <span className="text-[10px]">
                 {item.label}
               </span>
@@ -175,9 +195,9 @@ export default function Sidebar({
         })}
         <button
           onClick={logout}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[#68BA7F] hover:text-red-300 transition"
+          className="flex flex-col items-center gap-1 px-3 py-1 rounded-xl text-[#68BA7F] hover:text-red-300 transition"
         >
-          <span className="text-lg">🚪</span>
+          <LogOut className="w-5 h-5" strokeWidth={2.2} />
           <span className="text-[10px]">Logout</span>
         </button>
       </nav>

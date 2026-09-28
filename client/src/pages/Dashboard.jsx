@@ -3,13 +3,14 @@ import { useAuth } from "../context/AuthContext";
 import {
   getSections, createSection, deleteSection,
   getGoals, createGoal, toggleGoal, deleteGoal,
-  getBadges, getDailySummary,
+  getBadges, getDailySummary, logSession,
 } from "../lib/tracker";
 import AppLayout from "../components/AppLayout";
 import DashboardView from "../components/views/DashboardView";
 import SubjectsView from "../components/views/SubjectsView";
 import FocusTimerView from "../components/views/FocusTimerView";
 import MilestonesView from "../components/views/MilestonesView";
+import LeaderboardView from "../components/views/LeaderboardView";
 import SettingsPanel from "../components/panels/SettingsPanel";
 import FocusTimerModal from "../components/FocusTimerModal";
 
@@ -112,18 +113,19 @@ export default function Dashboard() {
     }
   };
 
-  const handleTimerComplete = async (goalId, actualMinutes) => {
+  const handleTimerComplete = async (sessionData, maybeMinutes) => {
     try {
-      let res;
-      if (goalId) {
-        res = await toggleGoal(goalId, { actualMinutes });
+      let payload;
+      if (typeof sessionData === "object" && sessionData !== null) {
+        payload = sessionData;
       } else {
-        // Find first active goal or general
-        const targetGoal = goals.find((g) => !g.completed) || goals[0];
-        if (targetGoal) {
-          res = await toggleGoal(targetGoal._id, { actualMinutes });
-        }
+        payload = {
+          goalId: sessionData,
+          minutes: Number(maybeMinutes) || 1,
+        };
       }
+
+      const res = await logSession(payload);
       await load();
       if (refreshUser) await refreshUser();
       if (res?.data?.newBadges?.length > 0) setNewBadgeAlert(res.data.newBadges);
@@ -189,6 +191,8 @@ export default function Dashboard() {
             dailySummary={dailySummary}
           />
         );
+      case "leaderboard":
+        return <LeaderboardView user={user} />;
       case "settings":
         return <SettingsPanel />;
       case "dashboard":

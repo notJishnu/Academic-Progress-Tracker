@@ -10,8 +10,10 @@ export default function DashboardView({
   onNavigate,
   onAddGoalClick,
 }) {
-  const activeGoals = goals.filter((g) => !g.completed);
-  const completedGoals = goals.filter((g) => g.completed);
+  const isGoalFinished = (g) =>
+    g.actualMinutes != null ? g.actualMinutes >= g.plannedMinutes : g.completed;
+  const activeGoals = goals.filter((g) => !isGoalFinished(g));
+  const completedGoals = goals.filter((g) => isGoalFinished(g));
   const progressPct = goals.length > 0 ? Math.round((completedGoals.length / goals.length) * 100) : 0;
 
   // Calculate focused hours
@@ -113,60 +115,78 @@ export default function DashboardView({
 
             {/* Goals list */}
             <div className="space-y-2.5">
-              {goals.map((g) => (
-                <div
-                  key={g._id}
-                  className={`rounded-xl p-3.5 border transition flex items-center justify-between gap-3 ${
-                    g.completed
-                      ? "bg-[#f8fdfa] border-[#e3f5eb] opacity-80"
-                      : "bg-white border-[#c9ebd6] hover:border-[#68BA7F] shadow-2xs"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <input
-                      type="checkbox"
-                      checked={g.completed}
-                      onChange={() => onToggleGoal(g._id)}
-                      className="w-5 h-5 accent-[#2E6F40] rounded cursor-pointer shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <p className={`text-sm font-bold truncate ${g.completed ? "line-through text-[#68BA7F]" : "text-[#253D2C]"}`}>
-                        {g.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-[#477e57]">
-                        <span className="font-semibold flex items-center gap-1" style={{ color: g.section?.color || "#2E6F40" }}>
-                          ● {g.section?.name || "General"}
-                        </span>
-                        <span>·</span>
-                        <span>{g.plannedMinutes} min</span>
-                        {g.actualMinutes && (
-                          <span className="text-[#2E6F40] font-bold">({g.actualMinutes}m logged)</span>
-                        )}
+              {goals.map((g) => {
+                const isTargetReached =
+                  g.actualMinutes != null
+                    ? g.actualMinutes >= g.plannedMinutes
+                    : g.completed;
+
+                return (
+                  <div
+                    key={g._id}
+                    className={`rounded-xl p-3.5 border transition flex items-center justify-between gap-3 ${
+                      isTargetReached
+                        ? "bg-[#f8fdfa] border-[#e3f5eb] opacity-80"
+                        : "bg-white border-[#c9ebd6] hover:border-[#68BA7F] shadow-2xs"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={isTargetReached}
+                        onChange={() => onToggleGoal(g._id)}
+                        className="w-5 h-5 accent-[#2E6F40] rounded cursor-pointer shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p
+                          className={`text-sm font-bold truncate ${
+                            isTargetReached ? "line-through text-[#68BA7F]" : "text-[#253D2C]"
+                          }`}
+                        >
+                          {g.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-[#477e57] flex-wrap">
+                          <span
+                            className="font-semibold flex items-center gap-1"
+                            style={{ color: g.section?.color || "#2E6F40" }}
+                          >
+                            ● {g.section?.name || "General"}
+                          </span>
+                          <span>·</span>
+                          {g.actualMinutes != null ? (
+                            <span className={isTargetReached ? "text-[#2E6F40] font-bold" : "text-[#35834c] font-semibold"}>
+                              {g.actualMinutes}m / {g.plannedMinutes}m target
+                              {isTargetReached ? " (Completed ✓)" : ` (${g.plannedMinutes - g.actualMinutes}m remaining)`}
+                            </span>
+                          ) : (
+                            <span>{g.plannedMinutes} min planned</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {!g.completed && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!isTargetReached && (
+                        <button
+                          onClick={() => onOpenTimer(g)}
+                          className="bg-[#CFFFDC] hover:bg-[#68BA7F] hover:text-white text-[#2E6F40] px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs"
+                          title="Start timer for this target"
+                        >
+                          <span>⏱️</span>
+                          <span>Focus</span>
+                        </button>
+                      )}
                       <button
-                        onClick={() => onOpenTimer(g)}
-                        className="bg-[#CFFFDC] hover:bg-[#68BA7F] hover:text-white text-[#2E6F40] px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs"
-                        title="Start timer for this target"
+                        onClick={() => onDeleteGoal(g._id)}
+                        className="text-[#68BA7F] hover:text-red-600 p-1 text-xs"
+                        title="Delete goal"
                       >
-                        <span>⏱️</span>
-                        <span>Focus</span>
+                        ✕
                       </button>
-                    )}
-                    <button
-                      onClick={() => onDeleteGoal(g._id)}
-                      className="text-[#68BA7F] hover:text-red-600 p-1 text-xs"
-                      title="Delete goal"
-                    >
-                      ✕
-                    </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {goals.length === 0 && (
                 <div className="text-center py-8 text-[#477e57] text-xs bg-[#f8fdfa] rounded-xl border border-dashed border-[#c9ebd6]">

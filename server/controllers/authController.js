@@ -90,6 +90,8 @@ export const getMe = async (req, res) => {
       completedDates: user.completedDates || [],
       totalStudyMinutes: user.totalStudyMinutes || 0,
       completedGoalsCount: user.completedGoalsCount || 0,
+      badges: user.badges || [],
+      dailyLogs: user.dailyLogs || [],
       createdAt: user.createdAt,
     });
   } catch (error) {

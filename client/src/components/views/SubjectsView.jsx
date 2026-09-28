@@ -13,6 +13,7 @@ export default function SubjectsView({
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(COLORS[0]);
+  const [targetHours, setTargetHours] = useState(25);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,9 +23,14 @@ export default function SubjectsView({
     setLoading(true);
     setError("");
     try {
-      await onAddSection({ name: name.trim(), color });
+      await onAddSection({
+        name: name.trim(),
+        color,
+        targetHours: Math.max(1, Number(targetHours) || 20),
+      });
       setName("");
       setColor(COLORS[0]);
+      setTargetHours(25);
       setShowModal(false);
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to create subject");
@@ -70,8 +76,8 @@ export default function SubjectsView({
           const loggedMins = breakdownItem?.minutes || secGoals.reduce((sum, g) => sum + (g.actualMinutes || (g.completed ? g.plannedMinutes : 0)), 0);
           const loggedHours = (loggedMins / 60).toFixed(1);
           
-          // Default semester target hours based on subject index or 20-30 hours
-          const targetHours = 20 + (idx % 3) * 5;
+          // Semester target hours from subject configuration or fallback
+          const targetHours = sec.targetHours || (20 + (idx % 3) * 5);
           const pct = Math.min(100, Math.round((Number(loggedHours) / targetHours) * 100));
 
           return (
@@ -180,6 +186,27 @@ export default function SubjectsView({
                   required
                   autoFocus
                 />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#477e57] block mb-1">Target Study Hours</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    value={targetHours}
+                    onChange={(e) => setTargetHours(e.target.value)}
+                    placeholder="e.g. 20, 30, 50"
+                    className="w-full border border-[#c9ebd6] rounded-xl px-3.5 py-2.5 pr-14 text-sm focus:outline-none focus:ring-2 focus:ring-[#68BA7F] text-[#253D2C]"
+                    required
+                  />
+                  <span className="absolute right-3.5 top-2.5 text-xs font-bold text-[#68BA7F] pointer-events-none">
+                    hours
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#477e57] mt-1">
+                  Total focus hours you aim to complete for this subject this term.
+                </p>
               </div>
 
               <div>
