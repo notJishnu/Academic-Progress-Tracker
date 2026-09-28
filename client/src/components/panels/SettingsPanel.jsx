@@ -58,6 +58,10 @@ export default function SettingsPanel() {
   const [showPw, setShowPw] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
 
+  // ── Forgot password (from settings) ─────────────────────
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
   // ── Delete account ───────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [showDeleteZone, setShowDeleteZone] = useState(false);
@@ -106,6 +110,20 @@ export default function SettingsPanel() {
       showToast(err.response?.data?.message || "Failed to update password", "error");
     } finally {
       setPwLoading(false);
+    }
+  };
+
+  const handleSendResetEmail = async () => {
+    if (!user?.email) return;
+    setResetLoading(true);
+    try {
+      await api.post("/auth/forgot-password", { email: user.email });
+      setResetSent(true);
+      showToast("✅ Password reset link sent to your email!");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to send reset link", "error");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -265,6 +283,31 @@ export default function SettingsPanel() {
               {pwLoading ? "Updating…" : "Update Password"}
             </button>
           </form>
+        </FieldRow>
+
+        <FieldRow
+          label="Forgot Password / Reset via Email"
+          hint={`Send a secure password reset link to ${user?.email || "your registered email"}`}
+        >
+          <div className="pt-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#f8fdfa] border border-[#c9ebd6] p-3.5 rounded-xl">
+            <p className="text-xs text-[#477e57] leading-relaxed">
+              {resetSent ? (
+                <span className="text-[#2E6F40] font-semibold">
+                  📬 Reset link dispatched! Check your inbox (or spam) at {user?.email}.
+                </span>
+              ) : (
+                "Can't recall your password or registered via Google? Click below to receive a 1-hour password reset link."
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={handleSendResetEmail}
+              disabled={resetLoading}
+              className="flex-shrink-0 px-4 py-2 border border-[#2E6F40] bg-[#f4fbf6] hover:bg-[#CFFFDC]/60 text-[#2E6F40] disabled:opacity-50 text-xs font-bold rounded-xl transition shadow-xs whitespace-nowrap"
+            >
+              {resetLoading ? "Sending Link…" : resetSent ? "Resend Link" : "Send Reset Link"}
+            </button>
+          </div>
         </FieldRow>
       </Section>
 

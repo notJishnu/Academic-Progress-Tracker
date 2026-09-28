@@ -52,6 +52,11 @@
   --color-slate-950: #101c13;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px; /* offset for sticky navbar */
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,

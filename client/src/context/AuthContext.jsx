@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState ,useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import api from "../lib/api";
 
 const AuthContext = createContext(null);
@@ -37,6 +37,13 @@ export const AuthProvider = ({ children }) => {
     setUser(data);
   };
 
+  // Called with the credential string from Google's OneTap / button
+  const loginWithGoogle = async (credential) => {
+    const { data } = await api.post("/auth/google", { credential });
+    localStorage.setItem("token", data.token);
+    setUser(data);
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -54,7 +61,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,10 +2,11 @@ import { useAuth } from "../context/AuthContext";
 import EduvaLogo from "./EduvaLogo";
 
 const NAV_ITEMS = [
-  { key: "dashboard", icon: "📊", label: "Dashboard" },
-  { key: "profile",   icon: "👤", label: "Profile" },
-  { key: "badges",    icon: "🏆", label: "Badges" },
-  { key: "settings",  icon: "⚙️", label: "Settings" },
+  { key: "dashboard",  icon: "🎛️", label: "Dashboard" },
+  { key: "subjects",   icon: "📖", label: "My Subjects" },
+  { key: "timer",      icon: "⏱️", label: "Focus Timer" },
+  { key: "milestones", icon: "🏆", label: "Milestones" },
+  { key: "settings",   icon: "⚙️", label: "Settings" },
 ];
 
 export default function Sidebar({

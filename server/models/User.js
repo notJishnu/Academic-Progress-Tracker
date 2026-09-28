@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: [true, "Name is required"], trim: true },
@@ -12,16 +11,24 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
+    // Optional: Google OAuth users won't have a password
     password: {
       type: String,
-      required: [true, "Password is required"],
       minlength: 6,
       select: false,
     },
+    // Google OAuth
+    googleId: { type: String, unique: true, sparse: true },
+    avatar: { type: String }, // Google profile picture URL
+
+    // Password reset
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
+
     currentStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
     lastStreakDate: { type: Date },
-    completedDates: [String],   // e.g. ["2024-06-01", "2024-06-02"] — local date strings
+    completedDates: [String],
     totalStudyMinutes: { type: Number, default: 0 },
     completedGoalsCount: { type: Number, default: 0 },
     badges: [
@@ -44,14 +51,17 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Only hash if password is set and modified
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+  if (!this.password || !this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
 userSchema.methods.matchPassword = function (entered) {
+  if (!this.password) return Promise.resolve(false);
   return bcrypt.compare(entered, this.password);
 };
 
 export default mongoose.model("User", userSchema);
+

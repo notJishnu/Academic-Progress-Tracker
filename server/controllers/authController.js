@@ -1,5 +1,10 @@
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 import User from "../models/User.js";
+import { sendPasswordResetEmail } from "../config/email.js";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -160,6 +165,127 @@ export const deleteAccount = async (req, res) => {
     res.status(200).json({ message: "Account deleted successfully" });
   } catch (error) {
     console.error("DELETE ACCOUNT ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc  Google OAuth — verify credential from frontend, issue JWT
+// @route POST /api/auth/google
+export const googleAuth = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) {
+      return res.status(400).json({ message: "Google credential is required" });
+    }
+
+    // Verify the Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const { sub: googleId, email, name, picture } = ticket.getPayload();
+
+    // Try to find existing user by googleId first, then by email
+    let user = await User.findOne({ googleId });
+
+    if (!user) {
+      // If they already have an email account, link it
+      user = await User.findOne({ email });
+      if (user) {
+        user.googleId = googleId;
+        if (picture) user.avatar = picture;
+        await user.save();
+      } else {
+        // Brand new user via Google
+        user = await User.create({ name, email, googleId, avatar: picture });
+      }
+    }
+
+    sendAuthResponse(user, 200, res);
+  } catch (error) {
+    console.error("GOOGLE AUTH ERROR:", error);
+    res.status(401).json({ message: "Google authentication failed" });
+  }
+};
+
+// @desc  Request password reset email
+// @route POST /api/auth/forgot-password
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    // Always respond 200 to prevent email enumeration
+    if (!user) {
+      return res.status(200).json({
+        message: "If that email is registered, a reset link has been sent.",
+      });
+    }
+
+    // Generate a raw token (sent in email) and store its hash in DB
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${rawToken}`;
+
+    try {
+      await sendPasswordResetEmail(user.email, resetUrl);
+    } catch (emailErr) {
+      // Roll back token if email fails
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+      console.error("EMAIL SEND ERROR:", emailErr);
+      return res.status(500).json({ message: "Failed to send reset email. Please try again." });
+    }
+
+    res.status(200).json({
+      message: "If that email is registered, a reset link has been sent.",
+    });
+  } catch (error) {
+    console.error("FORGOT PASSWORD ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc  Reset password using token from email
+// @route POST /api/auth/reset-password/:token
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    // Hash the incoming raw token to compare with stored hash
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    }).select("+resetPasswordToken +resetPasswordExpires");
+
+    if (!user) {
+      return res.status(400).json({ message: "Reset link is invalid or has expired." });
+    }
+
+    user.password = password; // pre-save hook bcrypts it
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    sendAuthResponse(user, 200, res);
+  } catch (error) {
+    console.error("RESET PASSWORD ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
