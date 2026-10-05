@@ -85,7 +85,7 @@ export default function Sidebar({
       <nav
         ref={dockRef}
         aria-label="Navigation Dock"
-        className="pointer-events-auto flex items-end gap-1.5 sm:gap-2 px-3 py-2 rounded-2xl bg-[#253D2C]/90 backdrop-blur-xl border border-[#68BA7F]/35 shadow-2xl shadow-[#101c13]/50 max-w-full overflow-x-auto select-none"
+        className="pointer-events-auto flex items-end gap-1 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-2xl bg-[#253D2C]/90 backdrop-blur-xl border border-[#68BA7F]/35 shadow-2xl shadow-[#101c13]/50 overflow-visible select-none"
       >
         {NAV_ITEMS.map((item, idx) => {
           const active = activePage === item.key;
