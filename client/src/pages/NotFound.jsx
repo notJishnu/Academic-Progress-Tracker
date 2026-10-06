@@ -8,7 +8,9 @@ import {
   ArrowRight,
   Zap,
   CheckCircle2,
-  Sparkles,
+  Timer,
+  Type,
+  Clock,
 } from "lucide-react";
 import EduvaLogo from "../components/EduvaLogo";
 
@@ -58,16 +60,21 @@ function generateRandomWords(count = 15) {
   return result.join(" ");
 }
 
-const WORD_COUNT_OPTIONS = [10, 15, 25];
+const WORD_COUNT_OPTIONS = [10, 15, 25, 50];
+const TIME_OPTIONS = [15, 30, 60];
 
 export default function NotFound() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // ── Typing Game State ──────────────────────────────────────────────
+  // ── Mode State ─────────────────────────────────────────────────────
+  const [mode, setMode] = useState("time"); // 'time' | 'words'
   const [wordCount, setWordCount] = useState(15);
-  const [targetText, setTargetText] = useState(() => generateRandomWords(15));
+  const [timeLimit, setTimeLimit] = useState(15); // in seconds
+  const [remainingTime, setRemainingTime] = useState(15);
 
+  // ── Typing Game State ──────────────────────────────────────────────
+  const [targetText, setTargetText] = useState(() => generateRandomWords(35));
   const [userInput, setUserInput] = useState("");
   const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -77,6 +84,7 @@ export default function NotFound() {
 
   const inputRef = useRef(null);
   const timerRef = useRef(null);
+  const wordsContainerRef = useRef(null);
 
   // Auto-focus input on mount or target change
   const focusInput = useCallback(() => {
@@ -93,8 +101,21 @@ export default function NotFound() {
   useEffect(() => {
     if (startTime && !isFinished) {
       timerRef.current = setInterval(() => {
-        const seconds = (Date.now() - startTime) / 1000;
-        setElapsedTime(seconds);
+        const elapsed = (Date.now() - startTime) / 1000;
+
+        if (mode === "time") {
+          const left = Math.max(0, timeLimit - elapsed);
+          setRemainingTime(left);
+          setElapsedTime(elapsed);
+
+          if (left <= 0) {
+            setIsFinished(true);
+            setRemainingTime(0);
+            clearInterval(timerRef.current);
+          }
+        } else {
+          setElapsedTime(elapsed);
+        }
       }, 100);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -102,7 +123,7 @@ export default function NotFound() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [startTime, isFinished]);
+  }, [startTime, isFinished, mode, timeLimit]);
 
   // Reset current game
   const resetGame = useCallback(() => {
@@ -110,22 +131,41 @@ export default function NotFound() {
     setUserInput("");
     setStartTime(null);
     setElapsedTime(0);
+    setRemainingTime(timeLimit);
     setIsFinished(false);
     setWpm(0);
     setAccuracy(100);
     setTimeout(focusInput, 50);
-  }, [focusInput]);
+  }, [focusInput, timeLimit]);
 
   // Generate brand new random word sequence
-  const nextRandomWords = useCallback((count = wordCount) => {
-    setTargetText(generateRandomWords(count));
-    resetGame();
-  }, [wordCount, resetGame]);
+  const nextRandomWords = useCallback(
+    (customMode = mode, count = wordCount) => {
+      const initialCount = customMode === "time" ? 35 : count;
+      setTargetText(generateRandomWords(initialCount));
+      resetGame();
+    },
+    [mode, wordCount, resetGame]
+  );
+
+  // Switch between Time Mode and Words Mode
+  const handleSelectMode = (newMode) => {
+    if (newMode === mode) return;
+    setMode(newMode);
+    nextRandomWords(newMode, wordCount);
+  };
 
   // Change word count mode
   const handleSelectWordCount = (count) => {
     setWordCount(count);
-    nextRandomWords(count);
+    nextRandomWords("words", count);
+  };
+
+  // Change time limit mode
+  const handleSelectTimeLimit = (seconds) => {
+    setTimeLimit(seconds);
+    setRemainingTime(seconds);
+    nextRandomWords("time");
   };
 
   // Handle typing input
@@ -156,10 +196,18 @@ export default function NotFound() {
     const currentWpm = Math.round((wordsTyped / activeSeconds) * 60);
     setWpm(currentWpm);
 
-    // Finished condition
-    if (val.length >= targetText.length) {
-      setIsFinished(true);
-      if (timerRef.current) clearInterval(timerRef.current);
+    // DYNAMIC WORD GENERATION: In time mode, as the user types forward,
+    // continually generate & append more words so words never run out while timer is running!
+    if (mode === "time") {
+      if (targetText.length - val.length < 45) {
+        setTargetText((prev) => prev + " " + generateRandomWords(20));
+      }
+    } else {
+      // In words mode, finish when target length is reached
+      if (val.length >= targetText.length) {
+        setIsFinished(true);
+        if (timerRef.current) clearInterval(timerRef.current);
+      }
     }
   };
 
@@ -349,7 +397,7 @@ export default function NotFound() {
             Lost in the Bamboo Grove?
           </h1>
           <p className="text-xs sm:text-sm text-[#477e57] max-w-lg mx-auto">
-            This sleepy panda climbed up here to take a rest. Test your typing speed with randomized words before heading back!
+            This sleepy panda climbed up here to take a rest. Test your typing speed in timed or word mode before heading back!
           </p>
         </div>
 
@@ -361,30 +409,79 @@ export default function NotFound() {
           {/* Header Bar of Game */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#e3f5eb] mb-4">
             
-            {/* Mode & Word Count Selector (Monkeytype Style) */}
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-[#253D2C] uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 text-[#2E6F40]" />
-                <span>Random Words</span>
-              </span>
+            {/* Mode & Configuration Selector (Monkeytype Style) */}
+            <div className="flex flex-wrap items-center gap-2">
               
-              <div className="flex items-center gap-1 ml-2 bg-[#f3fbf6] p-0.5 rounded-lg border border-[#c9ebd6]">
-                {WORD_COUNT_OPTIONS.map((count) => (
-                  <button
-                    key={count}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectWordCount(count);
-                    }}
-                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition ${
-                      wordCount === count
-                        ? "bg-[#2E6F40] text-white shadow-xs"
-                        : "text-[#477e57] hover:text-[#253D2C]"
-                    }`}
-                  >
-                    {count}
-                  </button>
-                ))}
+              {/* Mode Toggle: Time vs Words */}
+              <div className="flex items-center bg-[#f3fbf6] p-0.5 rounded-lg border border-[#c9ebd6]">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectMode("time");
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition ${
+                    mode === "time"
+                      ? "bg-[#2E6F40] text-white shadow-xs"
+                      : "text-[#477e57] hover:text-[#253D2C]"
+                  }`}
+                  title="Timed typing test"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>time</span>
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectMode("words");
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition ${
+                    mode === "words"
+                      ? "bg-[#2E6F40] text-white shadow-xs"
+                      : "text-[#477e57] hover:text-[#253D2C]"
+                  }`}
+                  title="Fixed words typing test"
+                >
+                  <Type className="w-3.5 h-3.5" />
+                  <span>words</span>
+                </button>
+              </div>
+
+              {/* Sub-Option Pill: Time limits or Word counts */}
+              <div className="flex items-center gap-1 bg-[#f3fbf6] p-0.5 rounded-lg border border-[#c9ebd6]">
+                {mode === "time"
+                  ? TIME_OPTIONS.map((seconds) => (
+                      <button
+                        key={seconds}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTimeLimit(seconds);
+                        }}
+                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition ${
+                          timeLimit === seconds
+                            ? "bg-[#2E6F40] text-white shadow-xs"
+                            : "text-[#477e57] hover:text-[#253D2C]"
+                        }`}
+                      >
+                        {seconds}s
+                      </button>
+                    ))
+                  : WORD_COUNT_OPTIONS.map((count) => (
+                      <button
+                        key={count}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectWordCount(count);
+                        }}
+                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition ${
+                          wordCount === count
+                            ? "bg-[#2E6F40] text-white shadow-xs"
+                            : "text-[#477e57] hover:text-[#253D2C]"
+                        }`}
+                      >
+                        {count}
+                      </button>
+                    ))}
               </div>
             </div>
 
@@ -398,14 +495,22 @@ export default function NotFound() {
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#2E6F40]" strokeWidth={2.2} />
                 <span>{accuracy}% ACC</span>
               </div>
-              <div className="px-2.5 py-1 rounded-lg bg-[#f3fbf6] border border-[#c9ebd6] text-xs font-mono font-bold text-[#376344]">
-                {elapsedTime.toFixed(1)}s
+              <div className="px-2.5 py-1 rounded-lg bg-[#f3fbf6] border border-[#c9ebd6] flex items-center gap-1.5 text-xs font-mono font-bold text-[#376344]">
+                <Timer className="w-3.5 h-3.5 text-[#2E6F40]" />
+                <span>
+                  {mode === "time"
+                    ? `${remainingTime.toFixed(0)}s`
+                    : `${elapsedTime.toFixed(1)}s`}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Interactive Randomized Words Display */}
-          <div className="min-h-[70px] text-base sm:text-lg font-medium leading-relaxed tracking-wide select-none p-3.5 rounded-xl bg-[#f8fdfa] border border-[#e3f5eb]/80 mb-4 font-mono">
+          {/* Interactive Randomized Words Display with Dynamic Streaming */}
+          <div
+            ref={wordsContainerRef}
+            className="min-h-[74px] max-h-[140px] overflow-y-auto text-base sm:text-lg font-medium leading-relaxed tracking-wide select-none p-3.5 rounded-xl bg-[#f8fdfa] border border-[#e3f5eb]/80 mb-4 font-mono scroll-smooth"
+          >
             {targetText.split("").map((char, index) => {
               let charStyle = "text-slate-400";
               const isCurrent = index === userInput.length;
@@ -438,7 +543,13 @@ export default function NotFound() {
             value={userInput}
             onChange={handleInputChange}
             disabled={isFinished}
-            placeholder={startTime ? "Keep typing..." : "Click here or start typing to begin..."}
+            placeholder={
+              startTime
+                ? mode === "time"
+                  ? "Keep typing, words generate automatically..."
+                  : "Keep typing..."
+                : "Click here or start typing to begin..."
+            }
             className="w-full px-4 py-2.5 rounded-xl border border-[#c9ebd6] focus:border-[#2E6F40] focus:ring-2 focus:ring-[#CFFFDC] outline-none text-sm font-medium transition text-[#253D2C] placeholder:text-slate-400 bg-white"
           />
 
@@ -455,7 +566,7 @@ export default function NotFound() {
                     </span>
                   </div>
                   <p className="text-xs text-[#376344] mt-0.5">
-                    {accuracy}% accuracy in {elapsedTime.toFixed(1)} seconds. {finalRank.desc}
+                    {accuracy}% accuracy in {mode === "time" ? `${timeLimit}s time test` : `${elapsedTime.toFixed(1)} seconds`}. {finalRank.desc}
                   </p>
                 </div>
               </div>
@@ -473,7 +584,7 @@ export default function NotFound() {
                   className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#2E6F40] hover:bg-[#253D2C] text-white text-xs font-bold transition shadow-xs"
                 >
                   <Shuffle className="w-3.5 h-3.5" />
-                  <span>New Words</span>
+                  <span>New Test</span>
                 </button>
               </div>
             </div>
@@ -482,7 +593,9 @@ export default function NotFound() {
           {/* Quick Controls Bar */}
           {!isFinished && (
             <div className="mt-3 flex items-center justify-between text-xs text-[#68BA7F]">
-              <span>💡 Press keys to type the randomized string above</span>
+              <span>
+                💡 {mode === "time" ? "Dynamic word stream · words generate as you type" : "Fixed word count test"}
+              </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={resetGame}
@@ -499,7 +612,7 @@ export default function NotFound() {
                   title="Generate new words"
                 >
                   <Shuffle className="w-3.5 h-3.5" />
-                  <span>New Words</span>
+                  <span>New Test</span>
                 </button>
               </div>
             </div>
