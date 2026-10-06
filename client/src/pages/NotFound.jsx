@@ -8,27 +8,65 @@ import {
   ArrowRight,
   Zap,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import EduvaLogo from "../components/EduvaLogo";
 
-const QUOTES = [
-  "The bamboo that bends is stronger than the oak that resists.",
-  "Deep focus is the secret weapon of high achievers in a distracted world.",
-  "Consistency always beats intensity when building habits that last a lifetime.",
-  "Small daily improvements over time lead to stunning academic breakthroughs.",
-  "Rest is not a reward for work finished, it is the fuel for your next focus session.",
-  "The expert in anything was once a beginner who refused to quit.",
-  "Study with deliberate curiosity and celebrate every single milestone achieved.",
-  "Your direction is far more important than your speed. Keep moving forward.",
+// Curated dictionary of academic, productivity, mindfulness, and everyday words (Monkeytype-style)
+const WORD_BANK = [
+  "about", "above", "academic", "accept", "action", "achieve", "adapt", "after",
+  "again", "almost", "always", "balance", "bamboo", "basic", "become", "before",
+  "begin", "belief", "better", "beyond", "brain", "brave", "break", "bright",
+  "build", "calm", "cause", "center", "change", "clarity", "climb", "commit",
+  "concept", "connect", "constant", "create", "curious", "daily", "deep",
+  "define", "design", "detail", "develop", "direct", "discipline", "discover",
+  "dream", "during", "early", "effort", "enable", "energy", "engage", "engine",
+  "enough", "equal", "escape", "every", "expand", "expert", "explore", "factor",
+  "faster", "figure", "finish", "flame", "flight", "focus", "forest", "formal",
+  "forward", "future", "gather", "genius", "gentle", "global", "grace", "great",
+  "green", "ground", "growth", "guide", "habit", "happen", "honest", "horizon",
+  "impact", "improve", "insight", "inspire", "intend", "invent", "journey",
+  "judge", "keen", "keep", "kind", "learn", "lesson", "level", "light",
+  "limit", "logic", "master", "matter", "measure", "memory", "mental", "method",
+  "mind", "minute", "mission", "moment", "motion", "motive", "moving", "natural",
+  "nature", "neural", "noble", "number", "object", "obtain", "online", "option",
+  "order", "origin", "panda", "patient", "pattern", "peace", "persist", "phase",
+  "planet", "pocket", "poise", "power", "practice", "precise", "prepare",
+  "process", "prompt", "pursue", "quiet", "random", "reach", "reason", "record",
+  "refine", "reflect", "repeat", "rescue", "resolve", "result", "reward",
+  "rhythm", "rising", "routine", "sacred", "sample", "scholar", "school",
+  "science", "search", "season", "secret", "select", "serene", "settle",
+  "signal", "silent", "simple", "skill", "sleepy", "smooth", "solve", "spark",
+  "spirit", "spring", "stable", "steady", "stream", "strike", "strive", "strong",
+  "student", "study", "subtle", "system", "target", "theory", "thinking",
+  "thrive", "time", "token", "track", "travel", "true", "trust", "unfold",
+  "unique", "unlock", "value", "venture", "vision", "vital", "wisdom", "wonder",
 ];
+
+// Generates a random sequence of words without consecutive duplicates
+function generateRandomWords(count = 15) {
+  const result = [];
+  let lastWord = "";
+  for (let i = 0; i < count; i++) {
+    let word;
+    do {
+      word = WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
+    } while (word === lastWord && WORD_BANK.length > 1);
+    result.push(word);
+    lastWord = word;
+  }
+  return result.join(" ");
+}
+
+const WORD_COUNT_OPTIONS = [10, 15, 25];
 
 export default function NotFound() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   // ── Typing Game State ──────────────────────────────────────────────
-  const [quoteIndex, setQuoteIndex] = useState(0);
-  const targetText = QUOTES[quoteIndex];
+  const [wordCount, setWordCount] = useState(15);
+  const [targetText, setTargetText] = useState(() => generateRandomWords(15));
 
   const [userInput, setUserInput] = useState("");
   const [startTime, setStartTime] = useState(null);
@@ -40,16 +78,16 @@ export default function NotFound() {
   const inputRef = useRef(null);
   const timerRef = useRef(null);
 
-  // Auto-focus input on mount or quote change
-  const focusInput = () => {
+  // Auto-focus input on mount or target change
+  const focusInput = useCallback(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  };
+  }, []);
 
   useEffect(() => {
     focusInput();
-  }, [quoteIndex]);
+  }, [targetText, focusInput]);
 
   // Timer interval while typing
   useEffect(() => {
@@ -66,7 +104,7 @@ export default function NotFound() {
     };
   }, [startTime, isFinished]);
 
-  // Reset current quote game
+  // Reset current game
   const resetGame = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     setUserInput("");
@@ -76,19 +114,19 @@ export default function NotFound() {
     setWpm(0);
     setAccuracy(100);
     setTimeout(focusInput, 50);
-  }, []);
+  }, [focusInput]);
 
-  // Pick random next quote
-  const nextRandomQuote = useCallback(() => {
-    setQuoteIndex((prev) => {
-      let next;
-      do {
-        next = Math.floor(Math.random() * QUOTES.length);
-      } while (next === prev && QUOTES.length > 1);
-      return next;
-    });
+  // Generate brand new random word sequence
+  const nextRandomWords = useCallback((count = wordCount) => {
+    setTargetText(generateRandomWords(count));
     resetGame();
-  }, [resetGame]);
+  }, [wordCount, resetGame]);
+
+  // Change word count mode
+  const handleSelectWordCount = (count) => {
+    setWordCount(count);
+    nextRandomWords(count);
+  };
 
   // Handle typing input
   const handleInputChange = (e) => {
@@ -127,10 +165,10 @@ export default function NotFound() {
 
   // Rank evaluation based on WPM
   const getRank = (score) => {
-    if (score >= 70) return { title: "Lightning Panda", badge: "⚡", color: "text-amber-500", desc: "Top-tier keyboard agility!" };
-    if (score >= 50) return { title: "Bamboo Sprinter", badge: "🎋", color: "text-[#2E6F40]", desc: "Swift, smooth and steady focus." };
-    if (score >= 30) return { title: "Steady Scholar", badge: "📚", color: "text-emerald-600", desc: "Consistent and deliberate." };
-    return { title: "Sleepy Panda", badge: "🐼", color: "text-slate-600", desc: "Relaxed pace, enjoying the bamboo breeze." };
+    if (score >= 75) return { title: "Lightning Panda", badge: "⚡", color: "text-amber-500", desc: "Elite keyboard speed and precision!" };
+    if (score >= 50) return { title: "Bamboo Sprinter", badge: "🎋", color: "text-[#2E6F40]", desc: "Swift, smooth and rhythmic flow." };
+    if (score >= 30) return { title: "Steady Scholar", badge: "📚", color: "text-emerald-600", desc: "Deliberate and continuous pace." };
+    return { title: "Sleepy Panda", badge: "🐼", color: "text-slate-600", desc: "Taking it easy under the bamboo canopy." };
   };
 
   const finalRank = getRank(wpm);
@@ -303,7 +341,7 @@ export default function NotFound() {
         </div>
 
         {/* ── 404 Heading & Subtext ─────────────────────────────────── */}
-        <div className="mb-6 space-y-1">
+        <div className="mb-5 space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#CFFFDC] text-[#2E6F40] text-xs font-black tracking-wider uppercase mb-1">
             404 Error · Page Not Found
           </div>
@@ -311,8 +349,7 @@ export default function NotFound() {
             Lost in the Bamboo Grove?
           </h1>
           <p className="text-xs sm:text-sm text-[#477e57] max-w-lg mx-auto">
-            This sleepy panda climbed up here to take a rest, and so can you.
-            Test your typing speed below before heading back to your study goals!
+            This sleepy panda climbed up here to take a rest. Test your typing speed with randomized words before heading back!
           </p>
         </div>
 
@@ -323,11 +360,32 @@ export default function NotFound() {
         >
           {/* Header Bar of Game */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#e3f5eb] mb-4">
+            
+            {/* Mode & Word Count Selector (Monkeytype Style) */}
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#2E6F40] animate-pulse"></span>
-              <span className="text-xs font-bold text-[#253D2C] uppercase tracking-wider">
-                Mini Typing Speed Test
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#253D2C] uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-[#2E6F40]" />
+                <span>Random Words</span>
               </span>
+              
+              <div className="flex items-center gap-1 ml-2 bg-[#f3fbf6] p-0.5 rounded-lg border border-[#c9ebd6]">
+                {WORD_COUNT_OPTIONS.map((count) => (
+                  <button
+                    key={count}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectWordCount(count);
+                    }}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition ${
+                      wordCount === count
+                        ? "bg-[#2E6F40] text-white shadow-xs"
+                        : "text-[#477e57] hover:text-[#253D2C]"
+                    }`}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Live Stats Pill Badges */}
@@ -346,8 +404,8 @@ export default function NotFound() {
             </div>
           </div>
 
-          {/* Interactive Quote Display */}
-          <div className="min-h-[70px] text-base sm:text-lg font-medium leading-relaxed tracking-wide select-none p-3 rounded-xl bg-[#f8fdfa] border border-[#e3f5eb]/80 mb-4 font-mono">
+          {/* Interactive Randomized Words Display */}
+          <div className="min-h-[70px] text-base sm:text-lg font-medium leading-relaxed tracking-wide select-none p-3.5 rounded-xl bg-[#f8fdfa] border border-[#e3f5eb]/80 mb-4 font-mono">
             {targetText.split("").map((char, index) => {
               let charStyle = "text-slate-400";
               const isCurrent = index === userInput.length;
@@ -373,7 +431,7 @@ export default function NotFound() {
             })}
           </div>
 
-          {/* Hidden or Clean Typing Input */}
+          {/* Typing Input */}
           <input
             ref={inputRef}
             type="text"
@@ -411,11 +469,11 @@ export default function NotFound() {
                   <span>Retry</span>
                 </button>
                 <button
-                  onClick={nextRandomQuote}
+                  onClick={() => nextRandomWords()}
                   className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#2E6F40] hover:bg-[#253D2C] text-white text-xs font-bold transition shadow-xs"
                 >
                   <Shuffle className="w-3.5 h-3.5" />
-                  <span>Next Quote</span>
+                  <span>New Words</span>
                 </button>
               </div>
             </div>
@@ -424,24 +482,24 @@ export default function NotFound() {
           {/* Quick Controls Bar */}
           {!isFinished && (
             <div className="mt-3 flex items-center justify-between text-xs text-[#68BA7F]">
-              <span>💡 Press keys to type the sentence above</span>
+              <span>💡 Press keys to type the randomized string above</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={resetGame}
                   className="flex items-center gap-1 hover:text-[#253D2C] transition font-semibold"
-                  title="Reset sentence"
+                  title="Reset test"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset</span>
                 </button>
                 <span>·</span>
                 <button
-                  onClick={nextRandomQuote}
+                  onClick={() => nextRandomWords()}
                   className="flex items-center gap-1 hover:text-[#253D2C] transition font-semibold"
-                  title="Different sentence"
+                  title="Generate new words"
                 >
                   <Shuffle className="w-3.5 h-3.5" />
-                  <span>New Quote</span>
+                  <span>New Words</span>
                 </button>
               </div>
             </div>
