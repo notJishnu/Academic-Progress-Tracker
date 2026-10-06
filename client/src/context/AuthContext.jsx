@@ -38,11 +38,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Called with the credential string from Google's OneTap / button
- const loginWithGoogle = async (credential) => {
-  const { data } = await api.post("/auth/google", { credential });
-  localStorage.setItem("token", data.token);
-  setUser(data);
-};
+  const loginWithGoogle = async (credential) => {
+    const { data } = await api.post("/auth/google", { credential });
+    localStorage.setItem("token", data.token);
+    setUser(data);
+  };
+
+  // Called with the authorization code returned from GitHub OAuth redirect
+  const loginWithGithub = async (code) => {
+    const { data } = await api.post("/auth/github", { code });
+    localStorage.setItem("token", data.token);
+    setUser(data);
+    return data;
+  };
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -61,7 +69,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        loginWithGoogle,
+        loginWithGithub,
+        logout,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

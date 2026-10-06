@@ -6,6 +6,7 @@ import {
   updateProfile,
   deleteAccount,
   googleAuth,
+  githubAuth,
   forgotPassword,
   resetPassword,
 } from "../controllers/authController.js";
@@ -16,6 +17,7 @@ const router = Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/google", googleAuth);
+router.post("/github", githubAuth);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 router.get("/me", protect, getMe);

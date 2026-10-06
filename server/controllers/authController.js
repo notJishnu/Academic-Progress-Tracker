@@ -210,6 +210,126 @@ export const googleAuth = async (req, res) => {
   }
 };
 
+// @desc  GitHub OAuth — exchange code for token, fetch profile & email, issue JWT
+// @route POST /api/auth/github
+export const githubAuth = async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ message: "GitHub authorization code is required" });
+    }
+
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return res.status(500).json({
+        message: "GitHub OAuth is not configured on the server. Please set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in server/.env",
+      });
+    }
+
+    // 1. Exchange temporary authorization code for access token
+    const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (tokenData.error || !tokenData.access_token) {
+      console.error("GITHUB TOKEN EXCHANGE ERROR:", tokenData);
+      return res.status(400).json({
+        message: tokenData.error_description || "Failed to exchange GitHub authorization code",
+      });
+    }
+
+    const accessToken = tokenData.access_token;
+
+    // 2. Fetch user profile from GitHub
+    const userResponse = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "User-Agent": "Eduva-Academic-Tracker",
+        Accept: "application/vnd.github+json",
+      },
+    });
+
+    if (!userResponse.ok) {
+      return res.status(401).json({ message: "Failed to fetch GitHub profile" });
+    }
+
+    const githubUser = await userResponse.json();
+    const githubId = String(githubUser.id);
+    const name = githubUser.name || githubUser.login;
+    const avatar = githubUser.avatar_url;
+    let email = githubUser.email;
+
+    // 3. If primary email is private, fetch from /user/emails
+    if (!email) {
+      try {
+        const emailsResponse = await fetch("https://api.github.com/user/emails", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "User-Agent": "Eduva-Academic-Tracker",
+            Accept: "application/vnd.github+json",
+          },
+        });
+        if (emailsResponse.ok) {
+          const emails = await emailsResponse.json();
+          const primaryEmail =
+            emails.find((e) => e.primary && e.verified) ||
+            emails.find((e) => e.verified) ||
+            emails[0];
+          if (primaryEmail?.email) {
+            email = primaryEmail.email;
+          }
+        }
+      } catch (emailErr) {
+        console.warn("Could not fetch GitHub private emails:", emailErr.message);
+      }
+    }
+
+    // Fallback if GitHub account has no accessible email
+    if (!email) {
+      email = `${githubUser.login}@users.noreply.github.com`;
+    }
+
+    // 4. Find or create user
+    let user = await User.findOne({ githubId });
+
+    if (!user) {
+      // If user exists with the same email, link GitHub account
+      user = await User.findOne({ email });
+      if (user) {
+        user.githubId = githubId;
+        if (!user.avatar && avatar) user.avatar = avatar;
+        await user.save();
+      } else {
+        // Brand new user via GitHub
+        user = await User.create({
+          name,
+          email,
+          githubId,
+          avatar,
+        });
+      }
+    }
+
+    sendAuthResponse(user, 200, res);
+  } catch (error) {
+    console.error("GITHUB AUTH ERROR:", error);
+    res.status(500).json({ message: error.message || "GitHub authentication failed" });
+  }
+};
+
 // @desc  Request password reset email
 // @route POST /api/auth/forgot-password
 export const forgotPassword = async (req, res) => {

@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema(
     },
     // Google OAuth
     googleId: { type: String, unique: true, sparse: true },
-    avatar: { type: String }, // Google profile picture URL
+    // GitHub OAuth
+    githubId: { type: String, unique: true, sparse: true },
+    avatar: { type: String }, // Profile picture URL
 
     // Password reset
     resetPasswordToken: { type: String, select: false },
