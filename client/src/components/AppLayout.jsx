@@ -22,8 +22,13 @@ export default function AppLayout({
     <div className="min-h-screen bg-[#f4fbf6] text-[#253D2C] flex flex-col">
       {/* ── Top Header Navigation Bar ───────────────────── */}
       <header className="sticky top-0 z-30 bg-[#f4fbf6]/90 backdrop-blur-md border-b border-[#c9ebd6]/80 px-4 sm:px-8 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <EduvaLogo className="w-8 h-8 flex-shrink-0" />
+        <button
+          type="button"
+          onClick={() => onNavigate && onNavigate("dashboard")}
+          className="flex items-center gap-3 text-left group cursor-pointer transition hover:opacity-90"
+          title="Go to Dashboard"
+        >
+          <EduvaLogo className="w-8 h-8 flex-shrink-0 transition-transform group-hover:scale-105" />
           <div>
             <span className="text-base font-black tracking-tight text-[#253D2C] leading-none block">
               Eduva
@@ -32,7 +37,7 @@ export default function AppLayout({
               Academic Progress Tracker
             </span>
           </div>
-        </div>
+        </button>
 
         <div className="flex items-center gap-3">
           {/* Timer Active Indicator */}

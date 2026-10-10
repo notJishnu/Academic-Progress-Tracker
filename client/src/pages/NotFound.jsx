@@ -226,7 +226,7 @@ export default function NotFound() {
       
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="px-6 py-4 flex items-center justify-between max-w-5xl mx-auto w-full">
-        <Link to="/" className="flex items-center gap-2.5 group">
+        <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2.5 group">
           <EduvaLogo className="w-8 h-8 transition-transform group-hover:scale-105" />
           <div>
             <span className="text-base font-black tracking-tight text-[#253D2C] leading-none block">

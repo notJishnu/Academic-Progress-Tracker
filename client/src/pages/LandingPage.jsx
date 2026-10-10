@@ -11,8 +11,8 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#c9ebd6]/80 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           {/* Brand */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <EduvaLogo className="w-9 h-9 shadow-xs" />
+          <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2.5 group">
+            <EduvaLogo className="w-9 h-9 shadow-xs transition-transform group-hover:scale-105" />
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-tight text-[#253D2C] leading-none">
                 Eduva
