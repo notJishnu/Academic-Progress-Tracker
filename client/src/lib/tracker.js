@@ -15,4 +15,5 @@ export const deleteGoal = (id) => api.delete(`/tracker/goals/${id}`);
 export const getBadges = () => api.get("/tracker/badges");
 export const getDailySummary = () => api.get("/tracker/summary");
 export const logSession = (data) => api.post("/tracker/session", data);
-export const getLeaderboard = () => api.get("/tracker/leaderboard");
+export const getLeaderboard = (params = {}) => api.get("/tracker/leaderboard", { params });
+export const getUserProfile = (userId) => api.get(`/tracker/profile/${userId}`);

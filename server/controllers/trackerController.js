@@ -472,22 +472,56 @@ export const getDailySummary = async (req, res) => {
 // GET /api/tracker/leaderboard
 export const getLeaderboard = async (req, res) => {
   try {
-    const users = await User.find({})
-      .select("name avatar totalStudyMinutes currentStreak badges")
-      .sort({ totalStudyMinutes: -1, currentStreak: -1 })
-      .limit(50);
+    const search = req.query.search?.trim();
+    let users;
+    let mappedLeaderboard;
 
-    const mappedLeaderboard = users.map((u, index) => ({
-      rank: index + 1,
-      _id: u._id,
-      name: u.name,
-      avatar: u.avatar || null,
-      totalStudyMinutes: u.totalStudyMinutes || 0,
-      totalHours: Number(((u.totalStudyMinutes || 0) / 60).toFixed(1)),
-      currentStreak: u.currentStreak || 0,
-      badgesCount: u.badges?.length || 0,
-      isCurrentUser: u._id.toString() === req.user._id.toString(),
-    }));
+    if (search) {
+      users = await User.find({ name: { $regex: search, $options: "i" } })
+        .select("name avatar totalStudyMinutes currentStreak badges")
+        .sort({ totalStudyMinutes: -1, currentStreak: -1 })
+        .limit(50);
+
+      // Compute rank for each matching user accurately
+      mappedLeaderboard = await Promise.all(
+        users.map(async (u) => {
+          const higherCount = await User.countDocuments({
+            $or: [
+              { totalStudyMinutes: { $gt: u.totalStudyMinutes || 0 } },
+              { totalStudyMinutes: u.totalStudyMinutes || 0, _id: { $lt: u._id } },
+            ],
+          });
+          return {
+            rank: higherCount + 1,
+            _id: u._id,
+            name: u.name,
+            avatar: u.avatar || null,
+            totalStudyMinutes: u.totalStudyMinutes || 0,
+            totalHours: Number(((u.totalStudyMinutes || 0) / 60).toFixed(1)),
+            currentStreak: u.currentStreak || 0,
+            badgesCount: u.badges?.length || 0,
+            isCurrentUser: u._id.toString() === req.user._id.toString(),
+          };
+        })
+      );
+    } else {
+      users = await User.find({})
+        .select("name avatar totalStudyMinutes currentStreak badges")
+        .sort({ totalStudyMinutes: -1, currentStreak: -1 })
+        .limit(50);
+
+      mappedLeaderboard = users.map((u, index) => ({
+        rank: index + 1,
+        _id: u._id,
+        name: u.name,
+        avatar: u.avatar || null,
+        totalStudyMinutes: u.totalStudyMinutes || 0,
+        totalHours: Number(((u.totalStudyMinutes || 0) / 60).toFixed(1)),
+        currentStreak: u.currentStreak || 0,
+        badgesCount: u.badges?.length || 0,
+        isCurrentUser: u._id.toString() === req.user._id.toString(),
+      }));
+    }
 
     // Find current user rank
     const currentUser = await User.findById(req.user._id).select("name avatar totalStudyMinutes currentStreak badges");
@@ -516,6 +550,61 @@ export const getLeaderboard = async (req, res) => {
     });
   } catch (error) {
     console.error("GET LEADERBOARD ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ---------- USER PUBLIC PROFILE ----------
+
+// GET /api/tracker/profile/:id
+export const getUserProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const targetUser = await User.findById(id).select(
+      "name avatar createdAt currentStreak longestStreak totalStudyMinutes completedGoalsCount badges dailyLogs"
+    );
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "Student profile not found" });
+    }
+
+    const currentMins = targetUser.totalStudyMinutes || 0;
+    const higherCount = await User.countDocuments({
+      $or: [
+        { totalStudyMinutes: { $gt: currentMins } },
+        { totalStudyMinutes: currentMins, _id: { $lt: targetUser._id } },
+      ],
+    });
+    const rank = higherCount + 1;
+    const totalUsersCount = await User.countDocuments();
+
+    // Fetch public sections (subject names, colors, targets)
+    const sections = await Section.find({ user: targetUser._id }).select("name color targetHours");
+
+    res.status(200).json({
+      _id: targetUser._id,
+      name: targetUser.name,
+      avatar: targetUser.avatar || null,
+      joinedAt: targetUser.createdAt,
+      currentStreak: targetUser.currentStreak || 0,
+      longestStreak: targetUser.longestStreak || 0,
+      totalStudyMinutes: currentMins,
+      totalHours: Number((currentMins / 60).toFixed(1)),
+      completedGoalsCount: targetUser.completedGoalsCount || 0,
+      badges: targetUser.badges || [],
+      dailyLogs: (targetUser.dailyLogs || []).slice(-30),
+      rank,
+      totalParticipants: totalUsersCount,
+      sections: sections.map((s) => ({
+        _id: s._id,
+        name: s.name,
+        color: s.color,
+        targetHours: s.targetHours,
+      })),
+      isCurrentUser: targetUser._id.toString() === req.user._id.toString(),
+    });
+  } catch (error) {
+    console.error("GET USER PROFILE ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -4,6 +4,7 @@ import {
   getSections, createSection, deleteSection,
   getGoals, createGoal, toggleGoal, deleteGoal,
   getBadges, getDailySummary, logSession, getLeaderboard,
+  getUserProfile,
 } from "../controllers/trackerController.js";
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.post("/session", logSession);
 router.get("/badges", getBadges);
 router.get("/summary", getDailySummary);
 router.get("/leaderboard", getLeaderboard);
+router.get("/profile/:id", getUserProfile);
 
 export default router;
