@@ -54,9 +54,14 @@ export const getSections = async (req, res) => {
 export const createSection = async (req, res) => {
   try {
     const { name, color, targetHours } = req.body;
-    if (!name) return res.status(400).json({ message: "Section name is required" });
-    const target = Math.max(1, Number(targetHours) || 20);
-    const section = await Section.create({ user: req.user._id, name, color, targetHours: target });
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({ message: "Section name is required" });
+    }
+    const safeName = name.trim().slice(0, 80);
+    const safeColor = typeof color === "string" && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : "#2E6F40";
+    const target = Math.min(1000, Math.max(1, Number(targetHours) || 20));
+
+    const section = await Section.create({ user: req.user._id, name: safeName, color: safeColor, targetHours: target });
     res.status(201).json(section);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -99,13 +104,18 @@ export const createGoal = async (req, res) => {
     if (!section || !title || !plannedMinutes) {
       return res.status(400).json({ message: "Section, title and planned minutes are required" });
     }
-    if (plannedMinutes < 5) {
-      return res.status(400).json({ message: "Minimum 5 minutes required" });
+    if (typeof title !== "string" || !title.trim()) {
+      return res.status(400).json({ message: "Valid goal title is required" });
+    }
+    const safeTitle = title.trim().slice(0, 200);
+    const parsedMinutes = Number(plannedMinutes);
+    if (isNaN(parsedMinutes) || parsedMinutes < 5 || parsedMinutes > 1440) {
+      return res.status(400).json({ message: "Planned minutes must be between 5 and 1440 minutes" });
     }
     const owns = await Section.findOne({ _id: section, user: req.user._id });
     if (!owns) return res.status(400).json({ message: "Invalid section" });
 
-    const goal = await Goal.create({ user: req.user._id, section, title, plannedMinutes });
+    const goal = await Goal.create({ user: req.user._id, section, title: safeTitle, plannedMinutes: parsedMinutes });
     res.status(201).json(goal);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -469,15 +479,19 @@ export const getDailySummary = async (req, res) => {
 
 // ---------- LEADERBOARD ----------
 
+// Escape special regex metacharacters to prevent ReDoS and regex injection (OWASP A05)
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // GET /api/tracker/leaderboard
 export const getLeaderboard = async (req, res) => {
   try {
-    const search = req.query.search?.trim();
+    const rawSearch = typeof req.query.search === "string" ? req.query.search.trim().slice(0, 50) : "";
     let users;
     let mappedLeaderboard;
 
-    if (search) {
-      users = await User.find({ name: { $regex: search, $options: "i" } })
+    if (rawSearch) {
+      const sanitizedRegex = new RegExp(escapeRegex(rawSearch), "i");
+      users = await User.find({ name: sanitizedRegex })
         .select("name avatar totalStudyMinutes currentStreak badges")
         .sort({ totalStudyMinutes: -1, currentStreak: -1 })
         .limit(50);

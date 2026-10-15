@@ -35,16 +35,19 @@ export const register = async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Please fill all fields" });
     }
+    if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string") {
+      return res.status(400).json({ message: "Invalid input format" });
+    }
     if (password.length < 6) {
       return res.status(400).json({ message: "Password must be 6+ characters" });
     }
 
-    const exists = await User.findOne({ email });
+    const exists = await User.findOne({ email: email.toLowerCase().trim() });
     if (exists) {
       return res.status(409).json({ message: "Email already registered" });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name: name.trim(), email: email.toLowerCase().trim(), password });
     sendAuthResponse(user, 201, res);
   } catch (error) {
     console.error("REGISTER ERROR:", error);
@@ -61,8 +64,11 @@ export const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ message: "Please fill all fields" });
     }
+    if (typeof email !== "string" || typeof password !== "string") {
+      return res.status(400).json({ message: "Invalid input format" });
+    }
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select("+password");
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
@@ -335,11 +341,11 @@ export const githubAuth = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Valid email is required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     // Always respond 200 to prevent email enumeration
     if (!user) {
       return res.status(200).json({
@@ -384,7 +390,11 @@ export const resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
 
-    if (!password || password.length < 6) {
+    if (!token || typeof token !== "string" || !password || typeof password !== "string") {
+      return res.status(400).json({ message: "Invalid request data" });
+    }
+
+    if (password.length < 6) {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
