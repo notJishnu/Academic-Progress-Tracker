@@ -42,56 +42,109 @@ export default function FocusTimerModal({ goal, onClose, onCompleteGoal }) {
   const [zenMode, setZenMode] = useState(false);
 
   const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const baseSecondsRef = useRef(plannedSeconds);
 
   const handleFinish = useCallback(() => {
     setIsActive(false);
     setIsFinished(true);
+    startTimeRef.current = null;
     playCompletionChime();
   }, []);
 
+  // Real-time calculation based on system clock (immune to tab throttling)
+  const updateTimer = useCallback(() => {
+    if (!startTimeRef.current) return;
+    const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+
+    if (mode === "countdown") {
+      const newRemaining = Math.max(0, baseSecondsRef.current - elapsed);
+      setRemainingSeconds(newRemaining);
+      if (newRemaining <= 0) {
+        handleFinish();
+      }
+    } else {
+      setRemainingSeconds(baseSecondsRef.current + elapsed);
+    }
+  }, [mode, handleFinish]);
+
+  // Main timer interval + Tab visibility and focus change listeners
   useEffect(() => {
     if (isActive) {
-      timerRef.current = setInterval(() => {
-        if (mode === "countdown") {
-          setRemainingSeconds((prev) => {
-            if (prev <= 1) {
-              clearInterval(timerRef.current);
-              handleFinish();
-              return 0;
-            }
-            return prev - 1;
-          });
-        } else {
-          setRemainingSeconds((prev) => prev + 1);
-        }
-      }, 1000);
+      // Run interval every 400ms for smooth UI updates
+      timerRef.current = setInterval(updateTimer, 400);
+
+      // Instant sync whenever user switches between browser tabs or windows
+      const handleTabSync = () => {
+        updateTimer();
+      };
+
+      document.addEventListener("visibilitychange", handleTabSync);
+      window.addEventListener("focus", handleTabSync);
+
+      return () => {
+        clearInterval(timerRef.current);
+        document.removeEventListener("visibilitychange", handleTabSync);
+        window.removeEventListener("focus", handleTabSync);
+      };
     } else {
       clearInterval(timerRef.current);
     }
-    return () => clearInterval(timerRef.current);
-  }, [isActive, mode, handleFinish]);
+  }, [isActive, updateTimer]);
 
-  const toggleTimer = () => setIsActive((prev) => !prev);
+  const toggleTimer = () => {
+    setIsActive((prev) => {
+      const next = !prev;
+      if (next) {
+        startTimeRef.current = Date.now();
+        baseSecondsRef.current = remainingSeconds;
+      } else {
+        updateTimer();
+        startTimeRef.current = null;
+      }
+      return next;
+    });
+  };
 
   const handleReset = () => {
     setIsActive(false);
     setIsFinished(false);
-    setRemainingSeconds(mode === "countdown" ? totalSeconds : 0);
+    startTimeRef.current = null;
+    const resetSecs = mode === "countdown" ? totalSeconds : 0;
+    baseSecondsRef.current = resetSecs;
+    setRemainingSeconds(resetSecs);
   };
 
   const addFiveMinutes = () => {
     if (mode === "countdown") {
       setTotalSeconds((prev) => prev + 300);
-      setRemainingSeconds((prev) => prev + 300);
+      setRemainingSeconds((prev) => {
+        const next = prev + 300;
+        baseSecondsRef.current = next;
+        startTimeRef.current = Date.now();
+        return next;
+      });
       setIsFinished(false);
     }
   };
 
   // Time calculations
-  const displaySeconds = mode === "countdown" ? remainingSeconds : remainingSeconds;
+  const displaySeconds = remainingSeconds;
   const mins = Math.floor(displaySeconds / 60);
   const secs = displaySeconds % 60;
   const timeFormatted = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+
+  // Update browser tab title while timer is running so users see live progress across tabs
+  useEffect(() => {
+    if (isActive) {
+      document.title = `${timeFormatted} · ${goal?.title || "Focus"} - Eduva`;
+    } else {
+      document.title = "Eduva · Academic Progress Tracker";
+    }
+    return () => {
+      document.title = "Eduva · Academic Progress Tracker";
+    };
+  }, [isActive, timeFormatted, goal?.title]);
 
   // Progress percentage for circular ring
   const progressPct =

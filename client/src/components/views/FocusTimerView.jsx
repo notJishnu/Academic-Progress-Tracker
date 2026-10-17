@@ -48,37 +48,73 @@ export default function FocusTimerView({
   const [showCustomModal, setShowCustomModal] = useState(false);
 
   const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const baseSecondsRef = useRef(25 * 60);
 
   const handleFinish = useCallback(() => {
     setIsActive(false);
+    startTimeRef.current = null;
     playChime();
   }, []);
 
+  // Real-time calculation based on system clock (immune to tab throttling)
+  const updateTimer = useCallback(() => {
+    if (!startTimeRef.current) return;
+    const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+
+    if (timerMode === "countdown") {
+      const newRemaining = Math.max(0, baseSecondsRef.current - elapsed);
+      setRemainingSeconds(newRemaining);
+      if (newRemaining <= 0) {
+        handleFinish();
+      }
+    } else {
+      setStopwatchSeconds(baseSecondsRef.current + elapsed);
+    }
+  }, [timerMode, handleFinish]);
+
+  // Main timer interval + Tab visibility and focus change listeners
   useEffect(() => {
     if (isActive) {
-      timerRef.current = setInterval(() => {
-        if (timerMode === "countdown") {
-          setRemainingSeconds((prev) => {
-            if (prev <= 1) {
-              clearInterval(timerRef.current);
-              handleFinish();
-              return 0;
-            }
-            return prev - 1;
-          });
-        } else {
-          setStopwatchSeconds((prev) => prev + 1);
-        }
-      }, 1000);
+      // Run interval every 400ms for smooth UI updates
+      timerRef.current = setInterval(updateTimer, 400);
+
+      // Instant sync whenever user switches between browser tabs or windows
+      const handleTabSync = () => {
+        updateTimer();
+      };
+
+      document.addEventListener("visibilitychange", handleTabSync);
+      window.addEventListener("focus", handleTabSync);
+
+      return () => {
+        clearInterval(timerRef.current);
+        document.removeEventListener("visibilitychange", handleTabSync);
+        window.removeEventListener("focus", handleTabSync);
+      };
     } else {
       clearInterval(timerRef.current);
     }
-    return () => clearInterval(timerRef.current);
-  }, [isActive, timerMode, handleFinish]);
+  }, [isActive, updateTimer]);
+
+  const togglePlayPause = () => {
+    setIsActive((prev) => {
+      const next = !prev;
+      if (next) {
+        startTimeRef.current = Date.now();
+        baseSecondsRef.current = timerMode === "countdown" ? remainingSeconds : stopwatchSeconds;
+      } else {
+        updateTimer();
+        startTimeRef.current = null;
+      }
+      return next;
+    });
+  };
 
   const handleSwitchMode = (mode) => {
     if (mode === timerMode) return;
     setIsActive(false);
+    startTimeRef.current = null;
     setTimerMode(mode);
   };
 
@@ -87,6 +123,8 @@ export default function FocusTimerView({
     const secs = mins * 60;
     setTotalSeconds(secs);
     setRemainingSeconds(secs);
+    baseSecondsRef.current = secs;
+    startTimeRef.current = null;
     setIsActive(false);
   };
 
@@ -99,9 +137,12 @@ export default function FocusTimerView({
 
   const resetTimer = () => {
     setIsActive(false);
+    startTimeRef.current = null;
     if (timerMode === "countdown") {
+      baseSecondsRef.current = totalSeconds;
       setRemainingSeconds(totalSeconds);
     } else {
+      baseSecondsRef.current = 0;
       setStopwatchSeconds(0);
     }
   };
@@ -113,6 +154,18 @@ export default function FocusTimerView({
   const timeFormatted = hrs > 0
     ? `${hrs}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
     : `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+
+  // Update browser tab title while timer is running so users see live progress across tabs
+  useEffect(() => {
+    if (isActive) {
+      document.title = `${timeFormatted} · ${timerMode === "countdown" ? "Focus" : "Stopwatch"} - Eduva`;
+    } else {
+      document.title = "Eduva · Academic Progress Tracker";
+    }
+    return () => {
+      document.title = "Eduva · Academic Progress Tracker";
+    };
+  }, [isActive, timeFormatted, timerMode]);
 
   const elapsedSeconds = timerMode === "countdown" ? totalSeconds - remainingSeconds : stopwatchSeconds;
   const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
@@ -287,8 +340,8 @@ export default function FocusTimerView({
 
           {/* Primary Play/Pause Button */}
           <button
-            onClick={() => setIsActive((p) => !p)}
-            className="w-16 h-16 rounded-full bg-[#2E6F40] hover:bg-[#253D2C] text-white text-2xl font-black transition shadow-lg shadow-[#2E6F40]/30 hover:scale-105 active:scale-95 flex items-center justify-center"
+            onClick={togglePlayPause}
+            className="w-16 h-16 rounded-full bg-[#2E6F40] hover:bg-[#253D2C] text-white text-2xl font-black transition shadow-lg shadow-[#2E6F40]/30 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer"
           >
             {isActive ? "⏸" : "▶"}
           </button>
